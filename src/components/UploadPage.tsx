@@ -465,11 +465,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
-              รายการผลงานทั้งหมด ({projects.length})
+              รายการผลงานทั้งหมด ({localItems.length})
             </h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--notion-text-muted)', margin: '4px 0 0 0' }}>
-              💡 สามารถคลิกค้างที่ไอคอน ⠿ เพื่อลากสลับลำดับ หรือใช้ปุ่ม ▲ ▼ เพื่อเลื่อนตำแหน่งการแสดงผลได้ทันที
-            </p>
           </div>
           {onNavigateToPortfolio && (
             <button

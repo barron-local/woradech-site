@@ -42,38 +42,15 @@ export default function App() {
         const cloudItems = await fetchProjectsFromSupabase();
         if (cloudItems && isMounted) {
           setConfig((prev) => {
-            const currentItems = prev.portfolio.items;
-            const currentIds = currentItems.map(i => i.id);
-            const cloudIds = cloudItems.map(i => i.id);
+            const currentStr = JSON.stringify(prev.portfolio.items);
+            const cloudStr = JSON.stringify(cloudItems);
 
-            // Check if there are new items added or items deleted in the cloud
-            const hasNewOrDeleted = cloudIds.some(id => !currentIds.includes(id)) || currentIds.some(id => !cloudIds.includes(id));
-            
-            // Check if content of existing items has changed
-            const cloudMap = new Map(cloudItems.map(i => [i.id, i]));
-            const hasContentChanged = currentItems.some(item => {
-              const cloud = cloudMap.get(item.id);
-              if (!cloud) return false;
-              return item.title !== cloud.title || 
-                     item.description !== cloud.description || 
-                     item.pdfUrl !== cloud.pdfUrl || 
-                     item.imageUrl !== cloud.imageUrl;
-            });
-
-            if (hasNewOrDeleted || hasContentChanged) {
-              // Maintain current user-arranged order for existing items, append any newly discovered cloud items to the top
-              const updatedExisting = currentItems
-                .filter(item => cloudMap.has(item.id))
-                .map(item => ({ ...item, ...cloudMap.get(item.id) }));
-              
-              const newlyAdded = cloudItems.filter(item => !currentIds.includes(item.id));
-              const mergedItems = [...newlyAdded, ...updatedExisting];
-
+            if (currentStr !== cloudStr) {
               const updated = {
                 ...prev,
                 portfolio: {
                   ...prev.portfolio,
-                  items: mergedItems
+                  items: cloudItems
                 }
               };
               saveSiteConfig(updated);
