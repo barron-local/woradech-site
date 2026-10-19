@@ -153,7 +153,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
             }}
           >
             <Layers size={17} strokeWidth={activeTab === 'carousel' ? 2.2 : 1.8} />
-            <span style={{ whiteSpace: 'nowrap' }}>1. จัดการรูปภาพ Carousel</span>
+            <span style={{ whiteSpace: 'nowrap' }}>จัดการรูปภาพ Carousel</span>
           </button>
 
           <button
@@ -176,7 +176,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
             }}
           >
             <FileText size={17} strokeWidth={activeTab === 'upload' ? 2.2 : 1.8} />
-            <span style={{ whiteSpace: 'nowrap' }}>2. จัดการไฟล์งาน (PDF & รูปภาพ)</span>
+            <span style={{ whiteSpace: 'nowrap' }}>จัดการไฟล์งาน (PDF & รูปภาพ)</span>
           </button>
         </div>
       </header>

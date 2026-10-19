@@ -677,183 +677,232 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                 </div>
               )
             ) : (
-              <div className="portfolio-grid">
-                {config.portfolio.items.map((item) => {
-                  // Check if this item is a section divider banner
-                  if (item.itemType === 'section') {
-                    const bg = item.sectionBg || '#f3f4f6';
-                    const textColor = item.sectionColor || '#1f2937';
-                    const borderColor = item.sectionBorder || '#e5e7eb';
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
+                {(() => {
+                  // Group items by section banner
+                  type SectionGroup = {
+                    sectionItem: typeof config.portfolio.items[0] | null;
+                    items: typeof config.portfolio.items;
+                  };
 
-                    const showBar = item.sectionShowBar !== false;
-                    const fontSize = item.sectionFontSize || '1.28rem';
-                    const align = item.sectionAlign || 'left';
+                  const groups: SectionGroup[] = [];
+                  let currentGroup: SectionGroup = { sectionItem: null, items: [] };
+
+                  config.portfolio.items.forEach((item) => {
+                    if (item.itemType === 'section') {
+                      if (currentGroup.sectionItem !== null || currentGroup.items.length > 0) {
+                        groups.push(currentGroup);
+                      }
+                      currentGroup = { sectionItem: item, items: [] };
+                    } else {
+                      currentGroup.items.push(item);
+                    }
+                  });
+
+                  if (currentGroup.sectionItem !== null || currentGroup.items.length > 0) {
+                    groups.push(currentGroup);
+                  }
+
+                  return groups.map((group, groupIdx) => {
+                    const section = group.sectionItem;
+                    const bg = section?.sectionBg || '#f8fafc';
+                    const textColor = section?.sectionColor || '#1e293b';
+                    const borderColor = section?.sectionBorder || '#e2e8f0';
+                    const showBar = section?.sectionShowBar !== false;
+                    const fontSize = section?.sectionFontSize || '1.32rem';
+                    const align = section?.sectionAlign || 'left';
                     const justifyContent = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
 
                     return (
                       <div
-                        key={item.id}
+                        key={section ? section.id : `group-${groupIdx}`}
                         style={{
-                          gridColumn: '1 / -1',
-                          backgroundColor: bg,
-                          color: textColor,
-                          border: `1.5px solid ${borderColor}`,
-                          borderRadius: '12px',
-                          padding: '16px 24px',
-                          marginTop: '20px',
-                          marginBottom: '6px',
                           display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: justifyContent,
-                          textAlign: align,
-                          gap: '16px',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                          position: 'relative'
+                          flexDirection: 'column',
+                          gap: '20px',
+                          paddingBottom: groupIdx < groups.length - 1 ? '36px' : '0',
+                          borderBottom: groupIdx < groups.length - 1 ? '1px dashed var(--notion-border)' : 'none'
                         }}
                       >
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: justifyContent,
-                          gap: '12px',
-                          width: align === 'center' ? '100%' : 'auto'
-                        }}>
-                          {showBar && (
-                            <div style={{
-                              width: '8px',
-                              height: '24px',
-                              borderRadius: '4px',
-                              backgroundColor: textColor,
-                              opacity: 0.8,
-                              flexShrink: 0
-                            }} />
-                          )}
-                          <h2 style={{
-                            fontSize: fontSize,
-                            fontWeight: 700,
-                            color: textColor,
-                            margin: 0,
-                            letterSpacing: '-0.01em',
-                            lineHeight: 1.3
-                          }}>
-                            {item.title}
-                          </h2>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return (
-                  <div
-                    key={item.id}
-                    className="notion-card"
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                      height: '100%'
-                    }}
-                  >
-                    {/* Clickable Image to view PDF directly */}
-                    <div
-                      onClick={() => {
-                        if (item.pdfUrl) {
-                          setViewingPdf({ url: item.pdfUrl, title: item.title });
-                        } else if (item.link) {
-                          window.open(item.link, '_blank');
-                        }
-                      }}
-                      style={{
-                        height: '210px',
-                        overflow: 'hidden',
-                        borderBottom: '1px solid var(--notion-border)',
-                        cursor: (item.pdfUrl || item.link) ? 'pointer' : 'default',
-                        position: 'relative'
-                      }}
-                      title={item.pdfUrl ? "คลิกเพื่อเปิดดูเอกสาร" : item.title}
-                    >
-                      <img
-                        src={item.imageUrl}
-                        alt={item.title}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          transition: 'transform 0.2s ease'
-                        }}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80";
-                        }}
-                      />
-                    </div>
-
-                    <div style={{
-                      padding: '18px 20px',
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      backgroundColor: '#ffffff'
-                    }}>
-                      <div>
-                        {/* Title with subtle category / format indicator */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          justifyContent: 'space-between',
-                          gap: '12px',
-                          marginBottom: item.description ? '8px' : '0px'
-                        }}>
-                          <h3
-                            onClick={() => {
-                              if (item.pdfUrl) {
-                                setViewingPdf({ url: item.pdfUrl, title: item.title });
-                              } else if (item.link) {
-                                window.open(item.link, '_blank');
-                              }
-                            }}
+                        {/* Section Header Banner */}
+                        {section && (
+                          <div
                             style={{
-                              fontSize: '1.12rem',
-                              fontWeight: 650,
-                              color: 'var(--notion-text)',
-                              lineHeight: 1.4,
-                              margin: 0,
-                              cursor: (item.pdfUrl || item.link) ? 'pointer' : 'default',
-                              transition: 'color 0.15s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              if (item.pdfUrl || item.link) (e.currentTarget as HTMLElement).style.color = '#2563eb';
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLElement).style.color = 'var(--notion-text)';
+                              backgroundColor: bg,
+                              color: textColor,
+                              border: `1.5px solid ${borderColor}`,
+                              borderRadius: '12px',
+                              padding: '16px 24px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: justifyContent,
+                              textAlign: align,
+                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                              position: 'relative'
                             }}
                           >
-                            {item.title}
-                          </h3>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: justifyContent,
+                              gap: '12px',
+                              width: align === 'center' ? '100%' : 'auto'
+                            }}>
+                              {showBar && (
+                                <div style={{
+                                  width: '8px',
+                                  height: '24px',
+                                  borderRadius: '4px',
+                                  backgroundColor: textColor,
+                                  opacity: 0.85,
+                                  flexShrink: 0
+                                }} />
+                              )}
+                              <h2 style={{
+                                fontSize: fontSize,
+                                fontWeight: 700,
+                                color: textColor,
+                                margin: 0,
+                                letterSpacing: '-0.01em',
+                                lineHeight: 1.3
+                              }}>
+                                {section.title}
+                              </h2>
+                            </div>
+                          </div>
+                        )}
 
-                          {(item.pdfUrl || item.link) && (
-                            <span style={{ color: 'var(--notion-text-muted)', flexShrink: 0, marginTop: '2px' }}>
-                              <ArrowUpRight size={17} />
-                            </span>
-                          )}
-                        </div>
+                        {/* Projects in this section */}
+                        {group.items.length > 0 ? (
+                          <div className="portfolio-grid">
+                            {group.items.map((item) => (
+                              <div
+                                key={item.id}
+                                className="notion-card"
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                                  height: '100%'
+                                }}
+                              >
+                                {/* Clickable Image to view PDF directly */}
+                                <div
+                                  onClick={() => {
+                                    if (item.pdfUrl) {
+                                      setViewingPdf({ url: item.pdfUrl, title: item.title });
+                                    } else if (item.link) {
+                                      window.open(item.link, '_blank');
+                                    }
+                                  }}
+                                  style={{
+                                    height: '210px',
+                                    overflow: 'hidden',
+                                    borderBottom: '1px solid var(--notion-border)',
+                                    cursor: (item.pdfUrl || item.link) ? 'pointer' : 'default',
+                                    position: 'relative'
+                                  }}
+                                  title={item.pdfUrl ? "คลิกเพื่อเปิดดูเอกสาร" : item.title}
+                                >
+                                  <img
+                                    src={item.imageUrl}
+                                    alt={item.title}
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'cover',
+                                      transition: 'transform 0.2s ease'
+                                    }}
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80";
+                                    }}
+                                  />
+                                </div>
 
-                        {/* Description */}
-                        {item.description ? (
-                          <p style={{
-                            fontSize: '0.88rem',
+                                <div style={{
+                                  padding: '18px 20px',
+                                  flex: 1,
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  justifyContent: 'space-between',
+                                  backgroundColor: '#ffffff'
+                                }}>
+                                  <div>
+                                    {/* Title with subtle category / format indicator */}
+                                    <div style={{
+                                      display: 'flex',
+                                      alignItems: 'flex-start',
+                                      justifyContent: 'space-between',
+                                      gap: '12px',
+                                      marginBottom: item.description ? '8px' : '0px'
+                                    }}>
+                                      <h3
+                                        onClick={() => {
+                                          if (item.pdfUrl) {
+                                            setViewingPdf({ url: item.pdfUrl, title: item.title });
+                                          } else if (item.link) {
+                                            window.open(item.link, '_blank');
+                                          }
+                                        }}
+                                        style={{
+                                          fontSize: '1.12rem',
+                                          fontWeight: 650,
+                                          color: 'var(--notion-text)',
+                                          lineHeight: 1.4,
+                                          margin: 0,
+                                          cursor: (item.pdfUrl || item.link) ? 'pointer' : 'default',
+                                          transition: 'color 0.15s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          if (item.pdfUrl || item.link) (e.currentTarget as HTMLElement).style.color = '#2563eb';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          (e.currentTarget as HTMLElement).style.color = 'var(--notion-text)';
+                                        }}
+                                      >
+                                        {item.title}
+                                      </h3>
+
+                                      {(item.pdfUrl || item.link) && (
+                                        <span style={{ color: 'var(--notion-text-muted)', flexShrink: 0, marginTop: '2px' }}>
+                                          <ArrowUpRight size={17} />
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Description */}
+                                    {item.description ? (
+                                      <p style={{
+                                        fontSize: '0.88rem',
+                                        color: 'var(--notion-text-muted)',
+                                        lineHeight: 1.55,
+                                        margin: '0 0 14px 0'
+                                      }}>
+                                        {item.description}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{
+                            padding: '24px 20px',
+                            textAlign: 'center',
                             color: 'var(--notion-text-muted)',
-                            lineHeight: 1.55,
-                            margin: '0 0 14px 0'
+                            fontSize: '0.9rem',
+                            backgroundColor: 'var(--notion-sidebar)',
+                            borderRadius: '8px',
+                            border: '1px dashed var(--notion-border)'
                           }}>
-                            {item.description}
-                          </p>
-                        ) : null}
+                            ยังไม่มีรายการผลงานในหมวดหมู่นี้
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
             )}
           </section>
