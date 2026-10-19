@@ -62,7 +62,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   const [sectionColor, setSectionColor] = useState('#1e40af');
   const [sectionBorder, setSectionBorder] = useState('#bfdbfe');
   const [sectionShowBar, setSectionShowBar] = useState(true);
-  const [sectionFontSize, setSectionFontSize] = useState('1.28rem');
+  const [sectionFontSize, setSectionFontSize] = useState('20px');
   const [sectionAlign, setSectionAlign] = useState<'left' | 'center' | 'right'>('left');
   const [isAddingSection, setIsAddingSection] = useState(false);
   const [sectionSuccess, setSectionSuccess] = useState(false);
@@ -76,7 +76,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   const [editSectionColor, setEditSectionColor] = useState('#1f2937');
   const [editSectionBorder, setEditSectionBorder] = useState('#e5e7eb');
   const [editSectionShowBar, setEditSectionShowBar] = useState(true);
-  const [editSectionFontSize, setEditSectionFontSize] = useState('1.28rem');
+  const [editSectionFontSize, setEditSectionFontSize] = useState('20px');
   const [editSectionAlign, setEditSectionAlign] = useState<'left' | 'center' | 'right'>('left');
   const [editNewFile, setEditNewFile] = useState<File | null>(null);
   const [editFileInfo, setEditFileInfo] = useState<{ name: string; size: string; isImage: boolean } | null>(null);
@@ -729,22 +729,36 @@ export const UploadPage: React.FC<UploadPageProps> = ({
               </div>
             </div>
 
-            {/* Font Size */}
+            {/* Font Size (px) */}
             <div>
               <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--notion-text)', display: 'block', marginBottom: '8px' }}>
-                ขนาดข้อความ (Font Size):
+                ขนาดข้อความ (px):
               </label>
-              <select
-                value={sectionFontSize}
-                onChange={(e) => setSectionFontSize(e.target.value)}
-                className="notion-input"
-                style={{ fontSize: '0.85rem', padding: '6px 10px', width: '100%' }}
-              >
-                <option value="1.05rem">เล็ก (Small - 1.05rem)</option>
-                <option value="1.28rem">ปานกลาง (Medium - 1.28rem)</option>
-                <option value="1.5rem">ใหญ่ (Large - 1.5rem)</option>
-                <option value="1.8rem">ใหญ่พิเศษ (Extra Large - 1.8rem)</option>
-              </select>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="number"
+                  min={12}
+                  max={60}
+                  step={1}
+                  value={parseInt(sectionFontSize.replace('px', '').replace('rem', ''), 10) || 20}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSectionFontSize(val ? `${val}px` : '20px');
+                  }}
+                  className="notion-input"
+                  style={{ fontSize: '0.88rem', padding: '6px 10px', width: '90px', fontWeight: 600 }}
+                />
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--notion-text-muted)' }}>px</span>
+                <input
+                  type="range"
+                  min={14}
+                  max={40}
+                  step={1}
+                  value={parseInt(sectionFontSize.replace('px', '').replace('rem', ''), 10) || 20}
+                  onChange={(e) => setSectionFontSize(`${e.target.value}px`)}
+                  style={{ flex: 1, cursor: 'pointer' }}
+                />
+              </div>
             </div>
 
             {/* Align */}
@@ -1542,22 +1556,36 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                       </div>
                     </div>
 
-                    {/* Font Size */}
+                    {/* Font Size (px) */}
                     <div>
                       <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--notion-text)', display: 'block', marginBottom: '6px' }}>
-                        ขนาดข้อความ:
+                        ขนาดข้อความ (px):
                       </label>
-                      <select
-                        value={editSectionFontSize}
-                        onChange={(e) => setEditSectionFontSize(e.target.value)}
-                        className="notion-input"
-                        style={{ fontSize: '0.82rem', padding: '5px 8px', width: '100%' }}
-                      >
-                        <option value="1.05rem">เล็ก (1.05rem)</option>
-                        <option value="1.28rem">ปานกลาง (1.28rem)</option>
-                        <option value="1.5rem">ใหญ่ (1.5rem)</option>
-                        <option value="1.8rem">ใหญ่พิเศษ (1.8rem)</option>
-                      </select>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input
+                          type="number"
+                          min={12}
+                          max={60}
+                          step={1}
+                          value={parseInt(editSectionFontSize.replace('px', '').replace('rem', ''), 10) || 20}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditSectionFontSize(val ? `${val}px` : '20px');
+                          }}
+                          className="notion-input"
+                          style={{ fontSize: '0.82rem', padding: '5px 8px', width: '70px', fontWeight: 600 }}
+                        />
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--notion-text-muted)' }}>px</span>
+                        <input
+                          type="range"
+                          min={14}
+                          max={40}
+                          step={1}
+                          value={parseInt(editSectionFontSize.replace('px', '').replace('rem', ''), 10) || 20}
+                          onChange={(e) => setEditSectionFontSize(`${e.target.value}px`)}
+                          style={{ flex: 1, cursor: 'pointer' }}
+                        />
+                      </div>
                     </div>
 
                     {/* Align */}
