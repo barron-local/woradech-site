@@ -169,7 +169,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
             title: title.trim(),
             category: isImage ? 'Image' : 'PDF Document',
             description: description.trim() || `ไฟล์ ${rawFile.name}`,
-            imageUrl: generatedCover || (isImage ? fileUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80"),
+            imageUrl: generatedCover || (isImage ? fileUrl : (fileUrl ? '' : '/banner.png')),
             pdfUrl: fileUrl,
             fileName: rawFile.name,
             link: fileUrl,
@@ -337,7 +337,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
         const finalUrl = res.item?.pdfUrl || fileDataUrl || updatedPdfUrl;
         const finalImage = isImage
           ? (res.item?.imageUrl || fileDataUrl || editingItem.imageUrl)
-          : (res.item?.imageUrl || pdfThumb || editingItem.imageUrl || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80");
+          : (res.item?.imageUrl || pdfThumb || editingItem.imageUrl || '');
 
         const updatedItem: PortfolioItem = {
           ...editingItem,

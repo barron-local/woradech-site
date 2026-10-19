@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import type { SiteConfig, PortfolioItem } from './types';
-import { loadSiteConfig, saveSiteConfig } from './types';
+import { loadSiteConfig, saveSiteConfig, CAROUSEL_CACHE_KEY, HERO_BANNER_CACHE_KEY, PORTFOLIO_CACHE_KEY, STORAGE_KEY } from './types';
 import { PublicSite, type PageRoute } from './components/PublicSite';
 import { SiteEditor } from './components/SiteEditor';
 import { AdminPinModal } from './components/AdminPinModal';
-import { fetchProjectsFromSupabase, syncProjectOrderToSupabase } from './supabase';
+import { fetchProjectsFromSupabase, syncProjectOrderToSupabase, fetchSiteConfigFromCloud, saveSiteConfigToCloud } from './supabase';
 
 export default function App() {
   const [config, setConfig] = useState<SiteConfig>(() => loadSiteConfig());
@@ -105,19 +105,59 @@ export default function App() {
       }
     }
 
-    // 1. Initial fetch
+    // 1. Initial fetch of projects
     pollProjects();
 
-    // 2. Cross-tab synchronization (updates immediately across tabs when items/order change)
+    // 2. Initial fetch of cloud configuration (Carousel, Banner, Site Info)
+    async function loadCloudConfig() {
+      try {
+        const cloudConfig = await fetchSiteConfigFromCloud();
+        if (cloudConfig && isMounted) {
+          setConfig((prev) => {
+            const cleanSlides = (cloudConfig.carousel?.slides || []).filter(s => s.imageUrl && !s.imageUrl.includes('unsplash.com'));
+            const cleanHeroUrl = (cloudConfig.heroImage?.imageUrl && !cloudConfig.heroImage.imageUrl.includes('unsplash.com'))
+              ? cloudConfig.heroImage.imageUrl
+              : prev.heroImage.imageUrl;
+
+            if (cleanSlides.length === 0 && cleanHeroUrl === prev.heroImage.imageUrl) {
+              return prev;
+            }
+
+            const updated: SiteConfig = {
+              ...prev,
+              heroImage: {
+                ...prev.heroImage,
+                imageUrl: cleanHeroUrl || prev.heroImage.imageUrl
+              },
+              carousel: {
+                ...prev.carousel,
+                slides: cleanSlides.length > 0 ? cleanSlides : prev.carousel.slides
+              }
+            };
+            saveSiteConfig(updated);
+            return updated;
+          });
+        }
+      } catch {}
+    }
+    loadCloudConfig();
+
+    // 3. Cross-tab synchronization (updates immediately across tabs when items/order/carousel change)
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'woradech_portfolio_items_cache' || e.key?.startsWith('woradech_notion_site_config_')) {
+      if (
+        e.key === PORTFOLIO_CACHE_KEY ||
+        e.key === CAROUSEL_CACHE_KEY ||
+        e.key === HERO_BANNER_CACHE_KEY ||
+        e.key === STORAGE_KEY ||
+        e.key?.startsWith('woradech_notion_site_config_')
+      ) {
         const refreshedConfig = loadSiteConfig();
         setConfig(refreshedConfig);
       }
     };
     window.addEventListener('storage', handleStorageChange);
 
-    // 3. Polling heartbeat every 3000ms (avoids connection exhaustion and ERR_QUIC_PROTOCOL_ERROR)
+    // 4. Polling heartbeat every 3000ms (avoids connection exhaustion and ERR_QUIC_PROTOCOL_ERROR)
     const interval = setInterval(pollProjects, 3000);
 
     return () => {
@@ -171,6 +211,7 @@ export default function App() {
   const handleUpdateConfig = (newConfig: SiteConfig) => {
     setConfig(newConfig);
     saveSiteConfig(newConfig);
+    saveSiteConfigToCloud(newConfig);
   };
 
   const openEditor = () => {

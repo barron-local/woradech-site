@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { PortfolioItem } from './types';
+import type { PortfolioItem, SiteConfig } from './types';
 import { renderPdfFirstPageToImage, dataUrlToBlob } from './utils/pdfThumbnail';
 
 // Read all credentials directly from environment variables (.env)
@@ -89,7 +89,9 @@ function parseProjectRow(row: SupabaseProjectRow): PortfolioItem {
     title: row.title,
     category: realCategory,
     description: row.description || '',
-    imageUrl: row.image_url || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+    imageUrl: (row.image_url && !row.image_url.includes('unsplash.com'))
+      ? row.image_url
+      : (isSection ? '' : '/banner.png'),
     pdfUrl: row.pdf_url,
     fileName: row.file_name,
     link: row.pdf_url,
@@ -176,7 +178,7 @@ export async function uploadProjectToSupabase(params: {
 
     const defaultCover = coverImageUrl || (isImage
       ? publicFileUrl
-      : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80");
+      : '');
 
     const itemCategory = params.category || (isImage ? 'Image' : 'PDF Document');
 
@@ -472,7 +474,9 @@ export async function updateProjectInSupabase(params: {
       title: updatePayload.title,
       category: realCategory,
       description: updatePayload.description || '',
-      imageUrl: (row && row.image_url) ? row.image_url : (isSection ? '' : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80"),
+      imageUrl: (row && row.image_url && !row.image_url.includes('unsplash.com'))
+        ? row.image_url
+        : (isSection ? '' : '/banner.png'),
       pdfUrl: updatePayload.pdf_url || (row ? row.pdf_url : ''),
       fileName: updatePayload.file_name || (row ? row.file_name : ''),
       link: updatePayload.pdf_url || (row ? row.pdf_url : ''),
@@ -539,5 +543,103 @@ export async function syncProjectOrderToSupabase(reorderedProjects: PortfolioIte
     }
   } catch (err) {
     console.warn('Failed to sync project order to Supabase:', err);
+  }
+}
+
+// Upload any asset (e.g. Carousel image or Banner image) directly to Supabase Storage
+export async function uploadAssetToSupabase(file: Blob | File, folder: string = 'site-assets'): Promise<string | null> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+
+  try {
+    const ext = (file instanceof File && file.name)
+      ? (file.name.split('.').pop() || 'jpg').toLowerCase()
+      : 'jpg';
+    const filePath = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const contentType = (file.type && file.type.startsWith('image/')) ? file.type : 'image/jpeg';
+
+    const { error } = await supabase.storage
+      .from('portfolio-docs')
+      .upload(filePath, file, {
+        contentType,
+        upsert: true
+      });
+
+    if (error) {
+      console.warn('Storage upload note:', error.message);
+      return null;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('portfolio-docs')
+      .getPublicUrl(filePath);
+
+    return urlData.publicUrl || null;
+  } catch (err) {
+    console.warn('Asset upload error:', err);
+    return null;
+  }
+}
+
+// Save site configuration (including Carousel slides & Hero banner) to Supabase Storage
+export async function saveSiteConfigToCloud(config: SiteConfig): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return false;
+
+  try {
+    // Only upload minimal site configuration (don't upload full base64 images)
+    const sanitizedToUpload = {
+      siteTitle: config.siteTitle,
+      logoText: config.logoText,
+      heroImage: config.heroImage,
+      carousel: config.carousel,
+      about: {
+        ...config.about,
+        avatarUrl: config.about.avatarUrl
+      },
+      footer: config.footer,
+      updatedAt: new Date().toISOString()
+    };
+
+    const jsonString = JSON.stringify(sanitizedToUpload, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+
+    const { error } = await supabase.storage
+      .from('portfolio-docs')
+      .upload('config/site_config.json', blob, {
+        contentType: 'application/json',
+        upsert: true
+      });
+
+    if (error) {
+      console.warn('Cloud config save note:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('saveSiteConfigToCloud error:', err);
+    return false;
+  }
+}
+
+// Fetch site configuration from Supabase Storage
+export async function fetchSiteConfigFromCloud(): Promise<Partial<SiteConfig> | null> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+
+  try {
+    const { data: urlData } = supabase.storage
+      .from('portfolio-docs')
+      .getPublicUrl('config/site_config.json');
+
+    if (!urlData?.publicUrl) return null;
+
+    // Use cache-busting timestamp to always get the latest configuration
+    const res = await fetch(`${urlData.publicUrl}?t=${Date.now()}`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json as Partial<SiteConfig>;
+  } catch (err) {
+    return null;
   }
 }

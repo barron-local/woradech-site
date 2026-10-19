@@ -66,8 +66,11 @@ export const Carousel: React.FC<CarouselProps> = ({
         {/* Slide Image */}
         <div className="carousel-slide-frame" style={{ position: 'relative', height: '440px', width: '100%', overflow: 'hidden' }}>
           <img
-            src={current.imageUrl}
-            alt={current.title}
+            src={current.imageUrl || '/banner.png'}
+            alt={current.title || 'Featured Slide'}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/banner.png';
+            }}
             style={{
               width: '100%',
               height: '100%',

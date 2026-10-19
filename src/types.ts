@@ -120,21 +120,7 @@ export const defaultSiteConfig: SiteConfig = {
         id: "slide-1",
         title: "",
         caption: "",
-        imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80",
-        link: "#portfolio"
-      },
-      {
-        id: "slide-2",
-        title: "",
-        caption: "",
-        imageUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80",
-        link: "#portfolio"
-      },
-      {
-        id: "slide-3",
-        title: "",
-        caption: "",
-        imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
+        imageUrl: "/banner.png",
         link: "#portfolio"
       }
     ]
@@ -199,8 +185,10 @@ export const defaultSiteConfig: SiteConfig = {
   }
 };
 
-const STORAGE_KEY = "woradech_notion_site_config_v15";
-const PORTFOLIO_CACHE_KEY = "woradech_portfolio_items_cache";
+export const STORAGE_KEY = "woradech_notion_site_config_v15";
+export const PORTFOLIO_CACHE_KEY = "woradech_portfolio_items_cache";
+export const CAROUSEL_CACHE_KEY = "woradech_carousel_slides_cache";
+export const HERO_BANNER_CACHE_KEY = "woradech_hero_banner_cache";
 
 export function loadSiteConfig(): SiteConfig {
   try {
@@ -213,17 +201,61 @@ export function loadSiteConfig(): SiteConfig {
       }
     } catch {}
 
+    // 2. Load dedicated carousel cache
+    let cachedCarouselSlides: CarouselSlide[] = [];
+    try {
+      const savedCarousel = localStorage.getItem(CAROUSEL_CACHE_KEY);
+      if (savedCarousel) {
+        const parsedSlides = JSON.parse(savedCarousel);
+        if (Array.isArray(parsedSlides) && parsedSlides.length > 0) {
+          cachedCarouselSlides = parsedSlides.filter((s: CarouselSlide) => s.imageUrl && !s.imageUrl.includes('unsplash.com'));
+        }
+      }
+    } catch {}
+
+    // 3. Load dedicated hero banner cache
+    let cachedHeroBanner: string = '';
+    try {
+      const savedBanner = localStorage.getItem(HERO_BANNER_CACHE_KEY);
+      if (savedBanner && !savedBanner.includes('unsplash.com')) {
+        cachedHeroBanner = savedBanner;
+      }
+    } catch {}
+
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
+      
+      // Clean up slides: strictly purge any legacy unsplash mockups
+      let resolvedSlides: CarouselSlide[] = [];
+      if (Array.isArray(parsed.carousel?.slides) && parsed.carousel.slides.length > 0) {
+        resolvedSlides = parsed.carousel.slides.filter((s: CarouselSlide) => s.imageUrl && !s.imageUrl.includes('unsplash.com'));
+      }
+      if (resolvedSlides.length === 0 && cachedCarouselSlides.length > 0) {
+        resolvedSlides = cachedCarouselSlides;
+      }
+      if (resolvedSlides.length === 0) {
+        resolvedSlides = defaultSiteConfig.carousel.slides;
+      }
+
+      const resolvedHeroImage = cachedHeroBanner || (
+        (parsed.heroImage?.imageUrl && !parsed.heroImage.imageUrl.includes('unsplash.com'))
+          ? parsed.heroImage.imageUrl
+          : defaultSiteConfig.heroImage.imageUrl
+      );
+
       return { 
         ...defaultSiteConfig, 
         ...parsed,
         heroImage: {
           ...defaultSiteConfig.heroImage,
-          imageUrl: (parsed.heroImage?.imageUrl && !parsed.heroImage.imageUrl.includes('unsplash.com'))
-            ? parsed.heroImage.imageUrl
-            : defaultSiteConfig.heroImage.imageUrl
+          ...(parsed.heroImage || {}),
+          imageUrl: resolvedHeroImage
+        },
+        carousel: {
+          ...defaultSiteConfig.carousel,
+          ...(parsed.carousel || {}),
+          slides: resolvedSlides
         },
         navLinks: {
           ...defaultSiteConfig.navLinks,
@@ -247,12 +279,20 @@ export function loadSiteConfig(): SiteConfig {
           education: defaultSiteConfig.about.education
         }
       };
-    } else if (cachedPortfolioItems.length > 0) {
+    } else {
       return {
         ...defaultSiteConfig,
+        heroImage: {
+          ...defaultSiteConfig.heroImage,
+          imageUrl: cachedHeroBanner || defaultSiteConfig.heroImage.imageUrl
+        },
+        carousel: {
+          ...defaultSiteConfig.carousel,
+          slides: cachedCarouselSlides.length > 0 ? cachedCarouselSlides : defaultSiteConfig.carousel.slides
+        },
         portfolio: {
           ...defaultSiteConfig.portfolio,
-          items: cachedPortfolioItems
+          items: cachedPortfolioItems.length > 0 ? cachedPortfolioItems : defaultSiteConfig.portfolio.items
         }
       };
     }
@@ -278,7 +318,17 @@ function cleanupOldLocalStorageKeys(): void {
 
 export function saveSiteConfig(config: SiteConfig): void {
   try {
-    // 1. Sanitize portfolio items so base64 data URLs don't blow up 5MB localStorage quota
+    // 1. Save dedicated cache keys first (guarantees fast synchronous retrieval on reload)
+    try {
+      if (config.carousel?.slides && config.carousel.slides.length > 0) {
+        localStorage.setItem(CAROUSEL_CACHE_KEY, JSON.stringify(config.carousel.slides));
+      }
+      if (config.heroImage?.imageUrl) {
+        localStorage.setItem(HERO_BANNER_CACHE_KEY, config.heroImage.imageUrl);
+      }
+    } catch {}
+
+    // 2. Sanitize portfolio items so base64 data URLs don't blow up 5MB localStorage quota
     const sanitizedPortfolioItems = (config.portfolio?.items || []).map(item => {
       const isDataUrl = item.pdfUrl?.startsWith('data:');
       return {
