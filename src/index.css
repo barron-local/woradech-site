@@ -302,21 +302,9 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 1.85rem !important;
   }
 
-  /* Education Timeline Mobile Optimization */
+  /* Education Card Mobile Optimization */
   .edu-timeline-track {
-    padding-left: 42px !important;
-  }
-
-  .edu-timeline-spine {
-    left: 15px !important;
-    top: 18px !important;
-    bottom: 24px !important;
-  }
-
-  .edu-timeline-node {
-    width: 32px !important;
-    height: 32px !important;
-    top: 14px !important;
+    padding-left: 0 !important;
   }
 
   .edu-card {
@@ -454,7 +442,7 @@ h1, h2, h3, h4, h5, h6 {
    ========================================================== */
 .edu-timeline-track {
   position: relative;
-  padding-left: 58px;
+  padding-left: 0;
 }
 
 .edu-timeline-spine {

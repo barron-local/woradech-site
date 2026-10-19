@@ -5,8 +5,6 @@ import {
   Menu,
   X,
   FileText,
-  GraduationCap,
-  Award,
   BookOpen,
   User,
   Phone,
@@ -18,9 +16,7 @@ import {
   Home,
   ArrowUpRight,
   Maximize2,
-  Minimize2,
-  Calendar,
-  Sparkles
+  Minimize2
 } from 'lucide-react';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
 import { PdfDocViewer } from './PdfDocViewer';
@@ -594,10 +590,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
                 {/* Timeline Container */}
                 <div className="edu-timeline-track">
-                  {/* Vertical Timeline Gradient Spine */}
-                  <div className="edu-timeline-spine" />
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     {config.about.education.map((edu, idx) => (
                       <div
                         key={edu.id || idx}
@@ -605,35 +598,11 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                         className="search-scroll-target"
                         style={{ position: 'relative' }}
                       >
-                        {/* Timeline Node Marker */}
-                        <div className={`edu-timeline-node ${edu.current ? 'is-current' : ''}`}>
-                          <GraduationCap
-                            size={edu.current ? 19 : 17}
-                            color={edu.current ? '#2563eb' : 'var(--notion-text-muted)'}
-                          />
-                          {edu.current && (
-                            <span
-                              style={{
-                                position: 'absolute',
-                                top: '-2px',
-                                right: '-2px',
-                                width: '10px',
-                                height: '10px',
-                                borderRadius: '50%',
-                                backgroundColor: '#10b981',
-                                border: '2px solid #ffffff',
-                                boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.3)'
-                              }}
-                              title="กำลังศึกษาอยู่"
-                            />
-                          )}
-                        </div>
-
                         {/* Education Card */}
                         <div
                           className={`edu-timeline-card edu-card ${edu.current ? 'is-current' : ''}`}
                         >
-                          {/* Card Meta Bar (Period & Status) */}
+                          {/* Card Header: Degree Title (หัวข้อใหญ่) */}
                           <div style={{
                             display: 'flex',
                             flexWrap: 'wrap',
@@ -644,67 +613,40 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                             paddingBottom: '12px',
                             borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
                           }}>
-                            {/* Period Chip */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                              {edu.current ? (
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '4px 12px',
-                                  borderRadius: '9999px',
-                                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                  border: '1px solid rgba(16, 185, 129, 0.25)',
-                                  color: '#047857',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 600
-                                }}>
-                                  <span style={{
-                                    width: '6px',
-                                    height: '6px',
-                                    borderRadius: '50%',
-                                    backgroundColor: '#10b981',
-                                    display: 'inline-block',
-                                    boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.3)'
-                                  }} />
-                                  <span>{edu.period || 'ปัจจุบัน'} • กำลังศึกษาอยู่</span>
-                                </span>
-                              ) : (
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '4px 12px',
-                                  borderRadius: '9999px',
-                                  backgroundColor: 'rgba(0, 0, 0, 0.035)',
-                                  border: '1px solid rgba(0, 0, 0, 0.06)',
-                                  color: 'var(--notion-text-muted)',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 500
-                                }}>
-                                  <Calendar size={13} style={{ flexShrink: 0 }} />
-                                  <span>{edu.period}</span>
-                                </span>
-                              )}
-                            </div>
+                            <h3 style={{
+                              fontSize: '1.28rem',
+                              fontWeight: 700,
+                              color: 'var(--notion-text)',
+                              margin: 0,
+                              wordBreak: 'break-word',
+                              letterSpacing: '-0.015em'
+                            }}>
+                              {edu.degree}
+                            </h3>
 
                             {/* Current Badge */}
                             {edu.current && (
                               <span style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '4px',
-                                fontSize: '0.74rem',
-                                fontWeight: 600,
-                                color: '#2563eb',
-                                backgroundColor: 'rgba(37, 99, 235, 0.08)',
-                                padding: '2px 8px',
-                                borderRadius: '6px',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.04em'
+                                gap: '6px',
+                                padding: '4px 12px',
+                                borderRadius: '9999px',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                                color: '#047857',
+                                fontSize: '0.78rem',
+                                fontWeight: 600
                               }}>
-                                <Sparkles size={11} />
-                                <span>CURRENT STATUS</span>
+                                <span style={{
+                                  width: '6px',
+                                  height: '6px',
+                                  borderRadius: '50%',
+                                  backgroundColor: '#10b981',
+                                  display: 'inline-block',
+                                  boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.3)'
+                                }} />
+                                <span>กำลังศึกษาอยู่ (ปัจจุบัน)</span>
                               </span>
                             )}
                           </div>
@@ -742,53 +684,30 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
                             {/* Info */}
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <h3 style={{
-                                fontSize: '1.22rem',
-                                fontWeight: 700,
+                              <h4 style={{
+                                fontSize: '1.18rem',
+                                fontWeight: 600,
                                 color: 'var(--notion-text)',
                                 margin: '0 0 3px 0',
                                 lineHeight: 1.35
                               }}>
                                 {edu.institution}
-                              </h3>
+                              </h4>
 
                               {edu.institutionEn && (
                                 <div style={{
                                   fontSize: '0.86rem',
                                   color: 'var(--notion-text-muted)',
-                                  marginBottom: '14px',
+                                  marginBottom: edu.major ? '12px' : '0',
                                   fontWeight: 400
                                 }}>
                                   {edu.institutionEn}
                                 </div>
                               )}
 
-                              {/* Badges: Degree & Major */}
-                              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
-                                {/* ระดับการศึกษา (Degree) */}
-                                <div
-                                  className="edu-degree-badge"
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '7px',
-                                    fontSize: '0.85rem',
-                                    color: '#1d4ed8',
-                                    fontWeight: 600,
-                                    backgroundColor: 'rgba(37, 99, 235, 0.06)',
-                                    padding: '5px 12px',
-                                    borderRadius: '8px',
-                                    border: '1px solid rgba(37, 99, 235, 0.16)',
-                                    maxWidth: '100%',
-                                    lineHeight: 1.4
-                                  }}
-                                >
-                                  <Award size={14} color="#2563eb" style={{ flexShrink: 0 }} />
-                                  <span style={{ wordBreak: 'break-word' }}>{edu.degree}</span>
-                                </div>
-
-                                {/* สาขาวิชา (Major / Field of Study) */}
-                                {edu.major && (
+                              {/* สาขาวิชา (Major / Field of Study) */}
+                              {edu.major && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
                                   <div style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -804,8 +723,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                                     <BookOpen size={13} color="#059669" style={{ flexShrink: 0 }} />
                                     <span>{edu.major}</span>
                                   </div>
-                                )}
-                              </div>
+                                </div>
+                              )}
 
                               {/* Description (ถ้ามี) */}
                               {edu.description && (
