@@ -131,6 +131,8 @@ export default function App() {
               },
               carousel: {
                 ...prev.carousel,
+                autoplay: cloudConfig.carousel?.autoplay !== undefined ? cloudConfig.carousel.autoplay : prev.carousel.autoplay,
+                interval: cloudConfig.carousel?.interval || prev.carousel.interval,
                 slides: cleanSlides.length > 0 ? cleanSlides : prev.carousel.slides
               }
             };

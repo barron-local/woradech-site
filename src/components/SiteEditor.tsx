@@ -14,6 +14,7 @@ import {
   ChevronDown,
   RotateCcw,
   Loader2,
+  Clock,
   Image as ImageIcon
 } from 'lucide-react';
 import { compressImage } from '../utils/imageCompress';
@@ -56,6 +57,14 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
   const [heroBannerUrl, setHeroBannerUrl] = useState<string>(() => {
     const url = config.heroImage?.imageUrl;
     return (url && !url.includes('unsplash.com')) ? url : '/banner.png';
+  });
+
+  // Carousel duration in seconds & autoplay state
+  const [intervalSeconds, setIntervalSeconds] = useState<number>(() => {
+    return config.carousel?.interval ? config.carousel.interval / 1000 : 4;
+  });
+  const [isAutoplay, setIsAutoplay] = useState<boolean>(() => {
+    return config.carousel?.autoplay !== false;
   });
 
   const [uploadingSlideId, setUploadingSlideId] = useState<string | null>(null);
@@ -148,6 +157,8 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
       imageUrl: s.imageUrl || '/banner.png'
     }));
 
+    const safeIntervalMs = Math.max(1500, Math.round(Number(intervalSeconds || 4) * 1000));
+
     const updatedConfig: SiteConfig = {
       ...config,
       heroImage: {
@@ -156,6 +167,8 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
       },
       carousel: {
         ...config.carousel,
+        autoplay: isAutoplay,
+        interval: safeIntervalMs,
         slides: cleanSlides
       }
     };
@@ -454,6 +467,85 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
                   <Plus size={15} />
                   <span>เพิ่มรูปสไลด์ใหม่</span>
                 </button>
+              </div>
+
+              {/* Timing & Autoplay Settings Box */}
+              <div style={{
+                backgroundColor: '#fbfbfa',
+                border: '1px solid var(--notion-border)',
+                borderRadius: 'var(--radius-xs)',
+                padding: '16px 18px',
+                marginBottom: '22px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Clock size={16} color="var(--notion-text)" />
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--notion-text)' }}>
+                      ตั้งค่าระยะเวลาเปลี่ยนสไลด์ (Slide Duration)
+                    </span>
+                  </div>
+
+                  {/* Autoplay toggle */}
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.84rem', fontWeight: 500, color: 'var(--notion-text)' }}>
+                    <input
+                      type="checkbox"
+                      checked={isAutoplay}
+                      onChange={(e) => setIsAutoplay(e.target.checked)}
+                      style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                    />
+                    <span>เล่นสไลด์อัตโนมัติ (Autoplay)</span>
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--notion-text-muted)' }}>
+                      ระยะเวลาแสดงรูป:
+                    </span>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <input
+                        type="number"
+                        min="1.5"
+                        max="30"
+                        step="0.5"
+                        value={intervalSeconds}
+                        onChange={(e) => setIntervalSeconds(Math.max(1, Number(e.target.value)))}
+                        className="notion-input"
+                        style={{ width: '74px', padding: '6px 8px', fontSize: '0.88rem', textAlign: 'center', fontWeight: 600 }}
+                      />
+                      <span style={{ fontSize: '0.84rem', color: 'var(--notion-text)' }}>วินาที</span>
+                    </div>
+                  </div>
+
+                  {/* Quick Preset Buttons */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--notion-text-muted)' }}>เลือกด่วน:</span>
+                    {[3, 4, 5, 6, 8, 10].map((sec) => (
+                      <button
+                        key={sec}
+                        type="button"
+                        onClick={() => setIntervalSeconds(sec)}
+                        style={{
+                          fontSize: '0.78rem',
+                          padding: '3px 9px',
+                          borderRadius: '4px',
+                          border: '1px solid',
+                          borderColor: intervalSeconds === sec ? 'var(--notion-text)' : 'var(--notion-border)',
+                          backgroundColor: intervalSeconds === sec ? 'var(--notion-text)' : '#ffffff',
+                          color: intervalSeconds === sec ? '#ffffff' : 'var(--notion-text)',
+                          cursor: 'pointer',
+                          fontWeight: intervalSeconds === sec ? 600 : 400,
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {sec} วิ
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Slides List */}
