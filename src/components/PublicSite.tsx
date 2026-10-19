@@ -6,7 +6,6 @@ import {
   X,
   FileText,
   GraduationCap,
-  Calendar,
   Award,
   BookOpen,
   User,
@@ -542,21 +541,6 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                               <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
                                 {edu.institution}
                               </h3>
-                              <span style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                fontSize: '0.85rem',
-                                color: edu.current ? '#166534' : 'var(--notion-text-muted)',
-                                backgroundColor: edu.current ? '#dcfce7' : 'var(--notion-sidebar)',
-                                padding: '4px 12px',
-                                borderRadius: '16px',
-                                fontWeight: 600,
-                                border: edu.current ? '1px solid #bbf7d0' : '1px solid var(--notion-border)'
-                              }}>
-                                <Calendar size={13} />
-                                {edu.period}
-                              </span>
                             </div>
 
                             {edu.institutionEn && (
