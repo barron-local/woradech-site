@@ -16,7 +16,9 @@ import {
   Target,
   Users,
   FileQuestion,
-  Home
+  Home,
+  ExternalLink,
+  ArrowUpRight
 } from 'lucide-react';
 
 export type PageRoute = 'home' | 'about' | 'portfolio' | '404';
@@ -400,7 +402,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                         นายอภินันท์ พันธ์พืช
                       </div>
                       <div style={{ fontSize: '0.88rem', color: 'var(--notion-text-muted)', marginBottom: '6px' }}>
-                        อาชีพ: <strong style={{ color: 'var(--notion-text)' }}>โปรแกรมเมอร์</strong>
+                        อาชีพ: <strong style={{ color: 'var(--notion-text)' }}>โปรแกรมเมอร์ & หัวหน้าช่างสำรวจ</strong>
                       </div>
                       <div style={{ fontSize: '0.88rem', color: 'var(--notion-text-muted)' }}>
                         เบอร์โทรศัพท์: <span style={{ color: '#2563eb', fontWeight: 600, userSelect: 'text' }}>095-068-8249</span>
@@ -666,14 +668,20 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             ) : (
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
-                gap: '28px'
+                gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                gap: '24px',
+                alignItems: 'start'
               }}>
                 {config.portfolio.items.map((item) => (
                   <div
                     key={item.id}
                     className="notion-card"
-                    style={{ display: 'flex', flexDirection: 'column', transition: 'transform 0.15s ease, box-shadow 0.15s ease' }}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                      height: '100%'
+                    }}
                   >
                     {/* Clickable Image to view PDF directly */}
                     <div
@@ -685,7 +693,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                         }
                       }}
                       style={{
-                        height: '230px',
+                        height: '210px',
                         overflow: 'hidden',
                         borderBottom: '1px solid var(--notion-border)',
                         cursor: (item.pdfUrl || item.link) ? 'pointer' : 'default',
@@ -708,41 +716,115 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                       />
                     </div>
 
-                    <div style={{ padding: '22px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <h3
-                        onClick={() => {
-                          if (item.pdfUrl) {
-                            setViewingPdf({ url: item.pdfUrl, title: item.title });
-                          } else if (item.link) {
-                            window.open(item.link, '_blank');
-                          }
-                        }}
-                        style={{
-                          fontSize: '1.25rem',
-                          fontWeight: 600,
-                          color: 'var(--notion-text)',
-                          marginBottom: '8px',
-                          cursor: (item.pdfUrl || item.link) ? 'pointer' : 'default'
-                        }}
-                      >
-                        {item.title}
-                      </h3>
+                    <div style={{
+                      padding: '18px 20px',
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      backgroundColor: '#ffffff'
+                    }}>
+                      <div>
+                        {/* Title with subtle category / format indicator */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          justifyContent: 'space-between',
+                          gap: '12px',
+                          marginBottom: item.description ? '8px' : '0px'
+                        }}>
+                          <h3
+                            onClick={() => {
+                              if (item.pdfUrl) {
+                                setViewingPdf({ url: item.pdfUrl, title: item.title });
+                              } else if (item.link) {
+                                window.open(item.link, '_blank');
+                              }
+                            }}
+                            style={{
+                              fontSize: '1.12rem',
+                              fontWeight: 650,
+                              color: 'var(--notion-text)',
+                              lineHeight: 1.4,
+                              margin: 0,
+                              cursor: (item.pdfUrl || item.link) ? 'pointer' : 'default',
+                              transition: 'color 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (item.pdfUrl || item.link) (e.currentTarget as HTMLElement).style.color = '#2563eb';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLElement).style.color = 'var(--notion-text)';
+                            }}
+                          >
+                            {item.title}
+                          </h3>
 
-                      {item.description && (
-                        <p style={{ fontSize: '0.9rem', color: 'var(--notion-text-muted)', lineHeight: 1.6, marginBottom: '16px', flex: 1 }}>
-                          {item.description}
-                        </p>
-                      )}
-
-                      {item.tags && item.tags.length > 0 && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: 'auto' }}>
-                          {item.tags.map((tag, tIdx) => (
-                            <span key={tIdx} className="notion-tag">
-                              #{tag}
+                          {(item.pdfUrl || item.link) && (
+                            <span style={{ color: 'var(--notion-text-muted)', flexShrink: 0, marginTop: '2px' }}>
+                              <ArrowUpRight size={17} />
                             </span>
-                          ))}
+                          )}
                         </div>
-                      )}
+
+                        {/* Description */}
+                        {item.description ? (
+                          <p style={{
+                            fontSize: '0.88rem',
+                            color: 'var(--notion-text-muted)',
+                            lineHeight: 1.55,
+                            margin: '0 0 14px 0'
+                          }}>
+                            {item.description}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      {/* Footer Actions / Meta */}
+                      <div style={{
+                        paddingTop: '14px',
+                        borderTop: '1px solid var(--notion-border)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginTop: item.description ? 'auto' : '14px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: 'var(--notion-text-muted)' }}>
+                          <FileText size={15} color="#6b7280" />
+                          <span style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {item.fileName || 'เอกสารแนบ'}
+                          </span>
+                        </div>
+
+                        {(item.pdfUrl || item.link) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (item.pdfUrl) {
+                                setViewingPdf({ url: item.pdfUrl, title: item.title });
+                              } else if (item.link) {
+                                window.open(item.link, '_blank');
+                              }
+                            }}
+                            className="notion-btn notion-btn-subtle"
+                            style={{
+                              fontSize: '0.84rem',
+                              fontWeight: 500,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 14px',
+                              borderRadius: '6px',
+                              color: '#2563eb',
+                              backgroundColor: '#eff6ff',
+                              border: '1px solid #bfdbfe'
+                            }}
+                          >
+                            <span>เปิดดูเอกสาร</span>
+                            <ExternalLink size={13} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

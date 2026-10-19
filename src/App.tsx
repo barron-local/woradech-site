@@ -143,7 +143,7 @@ export default function App() {
       ...config,
       portfolio: {
         ...config.portfolio,
-        items: [newProject, ...config.portfolio.items]
+        items: [...config.portfolio.items, newProject]
       }
     };
     setConfig(updated);

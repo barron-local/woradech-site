@@ -38,6 +38,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
 
   // Delete State
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingItem, setDeletingItem] = useState<PortfolioItem | null>(null);
 
   const isAcceptedFile = (file: File) => {
     const ext = (file.name.split('.').pop() || '').toLowerCase();
@@ -222,19 +223,24 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     }
   };
 
-  const handleDelete = async (item: PortfolioItem) => {
-    const confirmDelete = window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบผลงาน "${item.title}"?`);
-    if (!confirmDelete) return;
+  const promptDelete = (item: PortfolioItem) => {
+    setDeletingItem(item);
+  };
 
-    setDeletingId(item.id);
+  const handleConfirmDelete = async () => {
+    if (!deletingItem) return;
+    const itemToDelete = deletingItem;
+    setDeletingId(itemToDelete.id);
+
     try {
-      await deleteProjectFromSupabase(item.id);
-      onDeleteProject(item.id);
+      await deleteProjectFromSupabase(itemToDelete.id);
+      onDeleteProject(itemToDelete.id);
     } catch (err: any) {
       console.warn('Error deleting project:', err);
-      onDeleteProject(item.id);
+      onDeleteProject(itemToDelete.id);
     } finally {
       setDeletingId(null);
+      setDeletingItem(null);
     }
   };
 
@@ -448,93 +454,186 @@ export const UploadPage: React.FC<UploadPageProps> = ({
             ยังไม่มีรายการผลงานที่บันทึกไว้ สามารถอัปโหลดงานแรกได้จากแบบฟอร์มด้านบน
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {projects.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid var(--notion-border)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '16px 20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                }}
-              >
-                {/* Left: Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    {item.category === 'Image' || (item.fileName && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(item.fileName)) ? (
-                      <ImageIcon size={18} color="#2563eb" />
-                    ) : (
-                      <FileText size={18} color="#dc2626" />
-                    )}
-                    <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--notion-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.title}
-                    </span>
-                  </div>
-
-                  {item.description && (
-                    <p style={{ fontSize: '0.85rem', color: 'var(--notion-text-muted)', margin: '0 0 6px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.description}
-                    </p>
-                  )}
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8rem', color: 'var(--notion-text-muted)' }}>
-                    {item.fileName && (
-                      <span>ไฟล์: {item.fileName}</span>
-                    )}
-                    {item.pdfUrl && (
-                      <a
-                        href={item.pdfUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2563eb', textDecoration: 'none' }}
-                      >
-                        <ExternalLink size={12} />
-                        เปิดดูไฟล์
-                      </a>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right: Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                  <button
-                    onClick={() => startEdit(item)}
-                    className="notion-btn notion-btn-subtle"
-                    style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px' }}
-                    title="แก้ไขชื่องาน / รายละเอียด"
-                  >
-                    <Edit2 size={14} />
-                    <span>แก้ไข</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(item)}
-                    disabled={deletingId === item.id}
-                    className="notion-btn"
-                    style={{
-                      fontSize: '0.85rem',
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {projects.map((item, idx) => {
+              const isImage = item.category === 'Image' || (item.fileName && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(item.fileName));
+              return (
+                <div
+                  key={item.id || idx}
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid var(--notion-border)',
+                    borderRadius: '10px',
+                    padding: '14px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '18px',
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--notion-border-dark)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.06)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--notion-border)';
+                    e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.03)';
+                  }}
+                >
+                  {/* Left: Thumbnail & Main Info */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
+                    {/* Thumbnail Preview */}
+                    <div style={{
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      backgroundColor: '#f3f4f6',
+                      border: '1px solid var(--notion-border)',
+                      flexShrink: 0,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '5px',
-                      padding: '6px 12px',
-                      color: '#dc2626',
-                      borderColor: '#fca5a5',
-                      backgroundColor: '#fef2f2'
-                    }}
-                    title="ลบผลงานนี้"
-                  >
-                    <Trash2 size={14} />
-                    <span>{deletingId === item.id ? 'กำลังลบ...' : 'ลบ'}</span>
-                  </button>
+                      justifyContent: 'center'
+                    }}>
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
+                          }}
+                        />
+                      ) : isImage ? (
+                        <ImageIcon size={22} color="#2563eb" />
+                      ) : (
+                        <FileText size={22} color="#dc2626" />
+                      )}
+                    </div>
+
+                    {/* Text Details */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{
+                          fontSize: '1.02rem',
+                          fontWeight: 650,
+                          color: 'var(--notion-text)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {item.title}
+                        </span>
+
+                        {/* File Format Badge */}
+                        <span style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          backgroundColor: isImage ? '#eff6ff' : '#fef2f2',
+                          color: isImage ? '#1d4ed8' : '#b91c1c',
+                          border: `1px solid ${isImage ? '#bfdbfe' : '#fecaca'}`,
+                          flexShrink: 0
+                        }}>
+                          {isImage ? 'IMAGE' : 'PDF'}
+                        </span>
+                      </div>
+
+                      {item.description && (
+                        <p style={{
+                          fontSize: '0.86rem',
+                          color: 'var(--notion-text-muted)',
+                          margin: '0 0 6px 0',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          lineHeight: 1.4
+                        }}>
+                          {item.description}
+                        </p>
+                      )}
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.8rem', color: 'var(--notion-text-muted)' }}>
+                        {item.fileName && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <FileText size={13} color="#9ca3af" />
+                            {item.fileName}
+                          </span>
+                        )}
+                        {item.pdfUrl && (
+                          <a
+                            href={item.pdfUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              color: '#2563eb',
+                              fontWeight: 500,
+                              textDecoration: 'none'
+                            }}
+                          >
+                            <ExternalLink size={12} />
+                            เปิดดูไฟล์
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Actions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    <button
+                      onClick={() => startEdit(item)}
+                      className="notion-btn"
+                      style={{
+                        fontSize: '0.84rem',
+                        fontWeight: 500,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '7px 14px',
+                        borderRadius: '6px',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid var(--notion-border)',
+                        color: 'var(--notion-text)',
+                        cursor: 'pointer'
+                      }}
+                      title="แก้ไขชื่องาน / รายละเอียด"
+                    >
+                      <Edit2 size={13} />
+                      <span>แก้ไข</span>
+                    </button>
+
+                    <button
+                      onClick={() => promptDelete(item)}
+                      disabled={deletingId === item.id}
+                      className="notion-btn"
+                      style={{
+                        fontSize: '0.84rem',
+                        fontWeight: 500,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '7px 14px',
+                        borderRadius: '6px',
+                        color: '#dc2626',
+                        borderColor: '#fca5a5',
+                        backgroundColor: '#fef2f2',
+                        cursor: 'pointer'
+                      }}
+                      title="ลบผลงานนี้"
+                    >
+                      <Trash2 size={13} />
+                      <span>{deletingId === item.id ? 'กำลังลบ...' : 'ลบ'}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -633,24 +732,81 @@ export const UploadPage: React.FC<UploadPageProps> = ({
               </div>
 
               {/* Replace PDF or Image (Optional) */}
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+              <div style={{ marginBottom: '22px' }}>
+                <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
                   เปลี่ยนไฟล์แนบ (PDF หรือ รูปภาพ หากต้องการ):
                 </label>
-                <div style={{ fontSize: '0.82rem', color: 'var(--notion-text-muted)', marginBottom: '8px' }}>
-                  ไฟล์ปัจจุบัน: <strong>{editingItem.fileName || 'เอกสารแนบ'}</strong>
-                </div>
-                <input
-                  type="file"
-                  accept=".pdf,application/pdf,image/*"
-                  onChange={handleEditFileChange}
-                  style={{ fontSize: '0.85rem' }}
-                />
-                {editFileInfo && (
-                  <div style={{ marginTop: '6px', fontSize: '0.8rem', color: '#16a34a' }}>
-                    ✓ เลือกไฟล์ใหม่: {editFileInfo.name} ({editFileInfo.size})
+
+                {/* Current Active File Badge */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '9px 12px',
+                  backgroundColor: '#f9fafb',
+                  border: '1px solid var(--notion-border)',
+                  borderRadius: '6px',
+                  marginBottom: '10px',
+                  fontSize: '0.83rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                    <span style={{ color: 'var(--notion-text-muted)', fontSize: '0.78rem', flexShrink: 0 }}>ไฟล์เดิม:</span>
+                    <FileText size={15} color="#dc2626" style={{ flexShrink: 0 }} />
+                    <strong style={{ color: 'var(--notion-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {editingItem.fileName || 'เอกสารแนบ'}
+                    </strong>
                   </div>
-                )}
+                  {editingItem.pdfUrl && (
+                    <a
+                      href={editingItem.pdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: '#2563eb', textDecoration: 'none', fontSize: '0.78rem', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                    >
+                      <ExternalLink size={11} /> ดูไฟล์เดิม
+                    </a>
+                  )}
+                </div>
+
+                {/* Upload New File Area */}
+                <label style={{
+                  display: 'block',
+                  border: editFileInfo ? '1.5px solid #86efac' : '1.5px dashed var(--notion-border-dark)',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  textAlign: 'center',
+                  backgroundColor: editFileInfo ? '#f0fdf4' : '#fafafa',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}>
+                  {editFileInfo ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                      <CheckCircle2 size={18} color="#16a34a" />
+                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#166534' }}>
+                        {editFileInfo.name} ({editFileInfo.size})
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: '#15803d', marginLeft: '6px' }}>(คลิกเพื่อเปลี่ยน)</span>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#f3f4f6', color: 'var(--notion-text-muted)', marginBottom: '6px' }}>
+                        <UploadCloud size={18} />
+                      </div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 500, color: 'var(--notion-text)' }}>
+                        คลิกเพื่ออัปโหลดไฟล์ใหม่แทนที่ไฟล์เดิม
+                      </div>
+                      <div style={{ fontSize: '0.76rem', color: 'var(--notion-text-muted)', marginTop: '2px' }}>
+                        รองรับทั้ง PDF หรือ รูปภาพ (.pdf, .jpg, .png, .webp)
+                      </div>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf,image/*"
+                    onChange={handleEditFileChange}
+                    style={{ display: 'none' }}
+                  />
+                </label>
               </div>
 
               {/* Modal Buttons */}
@@ -675,6 +831,135 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                   <span>{isUpdating ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. DELETE CONFIRMATION MODAL */}
+      {deletingItem && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 15, 15, 0.65)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+          animation: 'fadeIn 0.15s ease-out'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: 'var(--radius-sm)',
+            width: '100%',
+            maxWidth: '440px',
+            border: '1px solid var(--notion-border)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              borderBottom: '1px solid #fee2e2',
+              backgroundColor: '#fef2f2'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: '#fee2e2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#dc2626'
+                }}>
+                  <Trash2 size={18} />
+                </div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#991b1b', margin: 0 }}>
+                  ยืนยันการลบผลงาน
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeletingItem(null)}
+                disabled={Boolean(deletingId)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#991b1b', padding: '4px' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '22px 20px' }}>
+              <p style={{ fontSize: '0.95rem', color: 'var(--notion-text)', margin: '0 0 12px 0', lineHeight: 1.5 }}>
+                คุณแน่ใจหรือไม่ว่าต้องการลบผลงานนี้?
+              </p>
+              <div style={{
+                padding: '12px 14px',
+                backgroundColor: '#f9fafb',
+                border: '1px solid var(--notion-border)',
+                borderRadius: 'var(--radius-xs)',
+                marginBottom: '14px'
+              }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#111827', wordBreak: 'break-word' }}>
+                  "{deletingItem.title}"
+                </div>
+                {deletingItem.fileName && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--notion-text-muted)', marginTop: '4px' }}>
+                    ไฟล์: {deletingItem.fileName}
+                  </div>
+                )}
+              </div>
+              <p style={{ fontSize: '0.82rem', color: '#ef4444', margin: 0 }}>
+                * การลบนี้จะไม่สามารถย้อนกลับได้ และไฟล์จะถูกนำออกจากระบบถาวร
+              </p>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              padding: '14px 20px',
+              borderTop: '1px solid var(--notion-border)',
+              backgroundColor: '#fbfbfa'
+            }}>
+              <button
+                type="button"
+                onClick={() => setDeletingItem(null)}
+                disabled={Boolean(deletingId)}
+                className="notion-btn notion-btn-subtle"
+                style={{ fontSize: '0.88rem', padding: '8px 16px' }}
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={Boolean(deletingId)}
+                className="notion-btn"
+                style={{
+                  fontSize: '0.88rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 16px',
+                  backgroundColor: '#dc2626',
+                  color: '#ffffff',
+                  border: '1px solid #b91c1c',
+                  fontWeight: 600
+                }}
+              >
+                <Trash2 size={14} />
+                <span>{deletingId ? 'กำลังลบผลงาน...' : 'ยืนยันลบ'}</span>
+              </button>
             </div>
           </div>
         </div>

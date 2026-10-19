@@ -41,7 +41,7 @@ export async function fetchProjectsFromSupabase(): Promise<PortfolioItem[] | nul
     const { data, error } = await supabase
       .from('projects')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: true });
 
     if (error) {
       console.warn('Supabase fetch error:', error);
@@ -58,7 +58,8 @@ export async function fetchProjectsFromSupabase(): Promise<PortfolioItem[] | nul
         pdfUrl: row.pdf_url,
         fileName: row.file_name,
         link: row.pdf_url,
-        tags: ['PDF', row.category || 'Document']
+        tags: ['PDF', row.category || 'Document'],
+        createdAt: row.created_at
       }));
     }
   } catch (err) {
@@ -150,7 +151,8 @@ export async function uploadProjectToSupabase(params: {
       pdfUrl: inserted.pdf_url,
       fileName: inserted.file_name,
       link: inserted.pdf_url,
-      tags: ['PDF', inserted.category || 'Document']
+      tags: ['PDF', inserted.category || 'Document'],
+      createdAt: inserted.created_at || new Date().toISOString()
     };
 
     return { success: true, item: newItem };
@@ -245,7 +247,8 @@ export async function updateProjectInSupabase(params: {
       pdfUrl: updatePayload.pdf_url || (row ? row.pdf_url : ''),
       fileName: updatePayload.file_name || (row ? row.file_name : ''),
       link: updatePayload.pdf_url || (row ? row.pdf_url : ''),
-      tags: ['PDF', updatePayload.category || 'Document']
+      tags: ['PDF', updatePayload.category || 'Document'],
+      createdAt: row?.created_at
     };
 
     return { success: true, item: updatedItem };

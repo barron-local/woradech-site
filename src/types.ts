@@ -17,6 +17,7 @@ export interface PortfolioItem {
   status?: string;
   pdfUrl?: string;
   fileName?: string;
+  createdAt?: string;
 }
 
 export interface EducationItem {
@@ -191,7 +192,7 @@ export const defaultSiteConfig: SiteConfig = {
   }
 };
 
-const STORAGE_KEY = "woradech_notion_site_config_v14";
+const STORAGE_KEY = "woradech_notion_site_config_v15";
 const PORTFOLIO_CACHE_KEY = "woradech_portfolio_items_cache";
 
 export function loadSiteConfig(): SiteConfig {
