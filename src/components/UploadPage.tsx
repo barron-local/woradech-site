@@ -557,7 +557,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
               type="text"
               value={sectionTitle}
               onChange={(e) => setSectionTitle(e.target.value)}
-              placeholder="เช่น หน่วยที่ 1 : พื้นฐานการเขียนโปรแกรม"
+              placeholder="เช่น หน่วยที่ 1"
               className="notion-input"
               style={{ fontSize: '0.94rem', padding: '10px 12px' }}
             />
