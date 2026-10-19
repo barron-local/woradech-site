@@ -55,10 +55,20 @@ export default function App() {
             if (localOnlyItems.length === 0) {
               mergedItems = cloudItems;
             } else {
-              // Map cloud items by ID
+              // Map cloud items by ID, preserving local imageUrl and pdfUrl if cloud doesn't have them
               const cloudMap = new Map(cloudItems.map(item => [item.id, item]));
-              mergedItems = prev.portfolio.items.map(item => {
-                return cloudMap.get(item.id) || item;
+              mergedItems = prev.portfolio.items.map(localItem => {
+                const cloudItem = cloudMap.get(localItem.id);
+                if (!cloudItem) return localItem;
+                return {
+                  ...cloudItem,
+                  // Keep local image / pdf if cloud returned default or empty
+                  imageUrl: (cloudItem.imageUrl && !cloudItem.imageUrl.includes('unsplash.com'))
+                    ? cloudItem.imageUrl
+                    : (localItem.imageUrl || cloudItem.imageUrl),
+                  pdfUrl: cloudItem.pdfUrl || localItem.pdfUrl,
+                  link: cloudItem.link || localItem.link
+                };
               });
               // Append any cloud items that were added from another device
               cloudItems.forEach(ci => {

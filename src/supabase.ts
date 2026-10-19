@@ -41,7 +41,7 @@ export async function fetchProjectsFromSupabase(): Promise<PortfolioItem[] | nul
   try {
     const { data, error } = await supabase
       .from('projects')
-      .select('id, title, category, description, file_name, created_at')
+      .select('id, title, category, description, file_name, image_url, created_at')
       .order('created_at', { ascending: true });
 
     if (error) {
