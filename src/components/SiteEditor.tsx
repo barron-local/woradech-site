@@ -15,7 +15,9 @@ import {
   RotateCcw,
   Loader2,
   Clock,
-  Image as ImageIcon
+  Image as ImageIcon,
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { compressImage } from '../utils/imageCompress';
 import { uploadAssetToSupabase } from '../supabase';
@@ -69,7 +71,9 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
 
   const [uploadingSlideId, setUploadingSlideId] = useState<string | null>(null);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Handle uploading Hero Banner image
   const handleBannerImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,32 +154,46 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
     setSlides(copy);
   };
 
-  const handleSaveAll = () => {
-    const cleanSlides = slides.map((s, idx) => ({
-      ...s,
-      id: s.id || `slide-${idx + 1}`,
-      imageUrl: s.imageUrl || '/banner.png'
-    }));
+  const handleSaveAll = async () => {
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const cleanSlides = slides.map((s, idx) => ({
+        ...s,
+        id: s.id || `slide-${idx + 1}`,
+        imageUrl: s.imageUrl || '/banner.png'
+      }));
 
-    const safeIntervalMs = Math.max(1500, Math.round(Number(intervalSeconds || 4) * 1000));
+      const safeIntervalMs = Math.max(1500, Math.round(Number(intervalSeconds || 4) * 1000));
 
-    const updatedConfig: SiteConfig = {
-      ...config,
-      heroImage: {
-        ...config.heroImage,
-        imageUrl: heroBannerUrl || '/banner.png'
-      },
-      carousel: {
-        ...config.carousel,
-        autoplay: isAutoplay,
-        interval: safeIntervalMs,
-        slides: cleanSlides
-      }
-    };
+      const updatedConfig: SiteConfig = {
+        ...config,
+        heroImage: {
+          ...config.heroImage,
+          imageUrl: heroBannerUrl || '/banner.png'
+        },
+        carousel: {
+          ...config.carousel,
+          autoplay: isAutoplay,
+          interval: safeIntervalMs,
+          slides: cleanSlides
+        }
+      };
 
-    onUpdateConfig(updatedConfig);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+      onUpdateConfig(updatedConfig);
+
+      // Brief delay so the user experiences tactile progress feedback
+      await new Promise(resolve => setTimeout(resolve, 350));
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 4000);
+    } catch (err: any) {
+      console.error('Failed to save config:', err);
+      setSaveError(err?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง');
+      setTimeout(() => setSaveError(null), 4500);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -305,11 +323,41 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
                 <button
                   onClick={handleSaveAll}
+                  disabled={isSaving}
                   className="notion-btn notion-btn-primary"
-                  style={{ fontSize: '0.9rem', padding: '8px 18px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', flexShrink: 0, fontWeight: 600 }}
+                  style={{
+                    fontSize: '0.9rem',
+                    padding: '8px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    fontWeight: 600,
+                    backgroundColor: saveSuccess ? '#16a34a' : undefined,
+                    borderColor: saveSuccess ? '#15803d' : undefined,
+                    color: '#ffffff',
+                    transition: 'all 0.2s ease',
+                    opacity: isSaving ? 0.75 : 1,
+                    cursor: isSaving ? 'not-allowed' : 'pointer'
+                  }}
                 >
-                  <Save size={16} />
-                  <span>บันทึกการเปลี่ยนแปลง</span>
+                  {isSaving ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>กำลังบันทึก...</span>
+                    </>
+                  ) : saveSuccess ? (
+                    <>
+                      <CheckCircle2 size={16} />
+                      <span>บันทึกสำเร็จ!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} />
+                      <span>บันทึกการเปลี่ยนแปลง</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -330,8 +378,28 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
                 marginBottom: '24px',
                 animation: 'fadeIn 0.2s ease'
               }}>
-                <CheckCircle2 size={18} />
-                <span>บันทึกรูปภาพเรียบร้อยแล้ว! ข้อมูลถูกอัปเดตลงแคชและระบบคลาวด์ พร้อมแสดงผลทันที</span>
+                <CheckCircle2 size={18} color="#16a34a" />
+                <span>บันทึกข้อมูลเรียบร้อยแล้ว! ข้อมูลถูกอัปเดตลงแคชและระบบคลาวด์ พร้อมแสดงผลทันที</span>
+              </div>
+            )}
+
+            {saveError && (
+              <div style={{
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-xs)',
+                border: '1px solid #fecaca',
+                backgroundColor: '#fef2f2',
+                color: '#991b1b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                marginBottom: '24px',
+                animation: 'fadeIn 0.2s ease'
+              }}>
+                <AlertCircle size={18} color="#dc2626" />
+                <span>{saveError}</span>
               </div>
             )}
 
@@ -741,14 +809,93 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
             </section>
 
             {/* Bottom Save Bar */}
-            <div style={{ marginTop: '28px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div style={{
+              marginTop: '32px',
+              paddingTop: '20px',
+              borderTop: '1px solid var(--notion-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              {/* Inline Save Status Indicator */}
+              <div>
+                {saveSuccess ? (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: '#166534',
+                    backgroundColor: '#f0fdf4',
+                    border: '1px solid #bbf7d0',
+                    padding: '8px 14px',
+                    borderRadius: 'var(--radius-xs)',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    animation: 'fadeIn 0.2s ease'
+                  }}>
+                    <CheckCircle2 size={18} color="#16a34a" />
+                    <span>บันทึกการเปลี่ยนแปลงทั้งหมดเรียบร้อยแล้ว</span>
+                  </div>
+                ) : saveError ? (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: '#991b1b',
+                    backgroundColor: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    padding: '8px 14px',
+                    borderRadius: 'var(--radius-xs)',
+                    fontSize: '0.88rem',
+                    fontWeight: 600
+                  }}>
+                    <AlertCircle size={18} color="#dc2626" />
+                    <span>{saveError}</span>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '0.84rem', color: 'var(--notion-text-muted)' }}>
+                    กดปุ่มบันทึกเพื่ออัปเดตการตั้งค่าแบนเนอร์และรูปภาพสไลด์
+                  </span>
+                )}
+              </div>
+
               <button
                 onClick={handleSaveAll}
+                disabled={isSaving}
                 className="notion-btn notion-btn-primary"
-                style={{ padding: '10px 24px', fontSize: '0.94rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}
+                style={{
+                  padding: '10px 24px',
+                  fontSize: '0.94rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backgroundColor: saveSuccess ? '#16a34a' : undefined,
+                  borderColor: saveSuccess ? '#15803d' : undefined,
+                  color: '#ffffff',
+                  transition: 'all 0.2s ease',
+                  opacity: isSaving ? 0.75 : 1,
+                  cursor: isSaving ? 'not-allowed' : 'pointer'
+                }}
               >
-                <Save size={16} />
-                <span>บันทึกการเปลี่ยนแปลงทั้งหมด</span>
+                {isSaving ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>กำลังบันทึกข้อมูล...</span>
+                  </>
+                ) : saveSuccess ? (
+                  <>
+                    <CheckCircle2 size={16} />
+                    <span>บันทึกสำเร็จเรียบร้อย!</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    <span>บันทึกการเปลี่ยนแปลงทั้งหมด</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -766,6 +913,89 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
         )}
 
       </main>
+
+      {/* Global Floating Toast Alert (แจ้งเตือนลอยเห็นชัดเจนทุกที่) */}
+      {(saveSuccess || saveError) && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '14px 18px',
+            borderRadius: '12px',
+            backgroundColor: '#ffffff',
+            border: saveSuccess ? '1.5px solid #86efac' : '1.5px solid #fca5a5',
+            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.06)',
+            color: 'var(--notion-text)',
+            minWidth: '320px',
+            maxWidth: '440px',
+            animation: 'fadeIn 0.2s ease'
+          }}
+        >
+          <div style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            backgroundColor: saveSuccess ? '#f0fdf4' : '#fef2f2',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            {saveSuccess ? (
+              <CheckCircle2 size={22} color="#16a34a" />
+            ) : (
+              <AlertCircle size={22} color="#dc2626" />
+            )}
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: '0.92rem',
+              fontWeight: 700,
+              color: saveSuccess ? '#15803d' : '#b91c1c',
+              marginBottom: '2px'
+            }}>
+              {saveSuccess ? 'บันทึกข้อมูลสำเร็จเรียบร้อย!' : 'เกิดข้อผิดพลาดในการบันทึก'}
+            </div>
+            <div style={{
+              fontSize: '0.82rem',
+              color: 'var(--notion-text-muted)',
+              lineHeight: 1.4
+            }}>
+              {saveSuccess
+                ? 'การเปลี่ยนแปลงแบนเนอร์และภาพสไลด์ถูกบันทึกขึ้นระบบแล้ว'
+                : (saveError || 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง')}
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setSaveSuccess(false);
+              setSaveError(null);
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--notion-text-muted)',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '6px'
+            }}
+            title="ปิดการแจ้งเตือน"
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
