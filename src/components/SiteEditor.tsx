@@ -769,11 +769,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
                     <AlertCircle size={18} color="#dc2626" />
                     <span>{saveError}</span>
                   </div>
-                ) : (
-                  <span style={{ fontSize: '0.84rem', color: 'var(--notion-text-muted)' }}>
-                    กดปุ่มเพื่อบันทึกทั้ง 1. แบนเนอร์หน้าแรก (Hero Banner) และ 2. รูปภาพสไลด์ (Carousel) พร้อมกัน
-                  </span>
-                )}
+                ) : null}
               </div>
 
               <button
