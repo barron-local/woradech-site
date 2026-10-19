@@ -1241,12 +1241,6 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                         )}
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.8rem', color: 'var(--notion-text-muted)' }}>
-                          {item.fileName && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              <FileText size={13} color="#9ca3af" />
-                              {item.fileName}
-                            </span>
-                          )}
                           {item.pdfUrl && (
                             <a
                               href={item.pdfUrl}
