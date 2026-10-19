@@ -17,7 +17,6 @@ import {
   Users,
   FileQuestion,
   Home,
-  ExternalLink,
   ArrowUpRight
 } from 'lucide-react';
 
@@ -850,52 +849,6 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                             {item.description}
                           </p>
                         ) : null}
-                      </div>
-
-                      {/* Footer Actions / Meta */}
-                      <div style={{
-                        paddingTop: '14px',
-                        borderTop: '1px solid var(--notion-border)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginTop: item.description ? 'auto' : '14px'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: 'var(--notion-text-muted)' }}>
-                          <FileText size={15} color="#6b7280" />
-                          <span style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {item.fileName || 'เอกสารแนบ'}
-                          </span>
-                        </div>
-
-                        {(item.pdfUrl || item.link) && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (item.pdfUrl) {
-                                setViewingPdf({ url: item.pdfUrl, title: item.title });
-                              } else if (item.link) {
-                                window.open(item.link, '_blank');
-                              }
-                            }}
-                            className="notion-btn notion-btn-subtle"
-                            style={{
-                              fontSize: '0.84rem',
-                              fontWeight: 500,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 14px',
-                              borderRadius: '6px',
-                              color: '#2563eb',
-                              backgroundColor: '#eff6ff',
-                              border: '1px solid #bfdbfe'
-                            }}
-                          >
-                            <span>เปิดดูเอกสาร</span>
-                            <ExternalLink size={13} />
-                          </button>
-                        )}
                       </div>
                     </div>
                   </div>
