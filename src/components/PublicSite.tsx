@@ -16,7 +16,9 @@ import {
   Users,
   FileQuestion,
   Home,
-  ArrowUpRight
+  ArrowUpRight,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
 import { PdfDocViewer } from './PdfDocViewer';
@@ -39,14 +41,23 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewingPdf, setViewingPdf] = useState<{ url: string; title: string } | null>(null);
+  const [isPdfFullscreen, setIsPdfFullscreen] = useState(false);
 
   // Lock body scroll when modal is open so the background page does not scroll
   useEffect(() => {
     if (viewingPdf) {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
+      const handleEsc = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setViewingPdf(null);
+          setIsPdfFullscreen(false);
+        }
+      };
+      window.addEventListener('keydown', handleEsc);
       return () => {
         document.body.style.overflow = originalOverflow;
+        window.removeEventListener('keydown', handleEsc);
       };
     }
   }, [viewingPdf]);
@@ -1025,23 +1036,27 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '16px'
+            padding: isPdfFullscreen ? '0px' : '16px'
           }}
-          onClick={() => setViewingPdf(null)}
+          onClick={() => {
+            setViewingPdf(null);
+            setIsPdfFullscreen(false);
+          }}
         >
           <div
             style={{
               backgroundColor: '#ffffff',
-              borderRadius: 'var(--radius-md)',
+              borderRadius: isPdfFullscreen ? '0px' : 'var(--radius-md)',
               width: '100%',
-              maxWidth: '960px',
-              height: '92vh',
-              maxHeight: '92vh',
+              maxWidth: isPdfFullscreen ? '100vw' : '1080px',
+              height: isPdfFullscreen ? '100vh' : '92vh',
+              maxHeight: isPdfFullscreen ? '100vh' : '92vh',
               display: 'flex',
               flexDirection: 'column',
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
-              border: '1px solid var(--notion-border)',
-              overflow: 'hidden'
+              border: isPdfFullscreen ? 'none' : '1px solid var(--notion-border)',
+              overflow: 'hidden',
+              transition: 'all 0.15s ease'
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1050,7 +1065,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '12px 18px',
+              padding: '10px 16px',
               borderBottom: '1px solid var(--notion-border)',
               backgroundColor: '#fbfbfa'
             }}>
@@ -1060,23 +1075,47 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   {viewingPdf.title}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <button
                   type="button"
-                  onClick={() => setViewingPdf(null)}
+                  onClick={() => setIsPdfFullscreen(!isPdfFullscreen)}
+                  className="notion-btn"
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid var(--notion-border)',
+                    background: '#ffffff',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.78rem',
+                    color: 'var(--notion-text)'
+                  }}
+                  title={isPdfFullscreen ? "ย่อหน้าต่าง" : "ขยายเต็มจอ"}
+                >
+                  {isPdfFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                  <span>{isPdfFullscreen ? "ย่อ" : "เต็มจอ"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewingPdf(null);
+                    setIsPdfFullscreen(false);
+                  }}
                   className="notion-btn"
                   style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--notion-border)', background: '#ffffff', cursor: 'pointer' }}
-                  title="ปิดหน้าต่าง"
+                  title="ปิดหน้าต่าง (Esc)"
                 >
                   <X size={16} />
                 </button>
               </div>
             </div>
 
-            {/* Embedded Viewer (Supports Images and Multi-page PDF scrolling) */}
-            <div style={{ flex: 1, width: '100%', height: '100%', backgroundColor: '#18181b', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            {/* Embedded Viewer (Supports Images and Full-featured PDF viewer) */}
+            <div style={{ flex: 1, width: '100%', height: '100%', backgroundColor: '#f7f7f5', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               {viewingPdf.url.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(viewingPdf.url) ? (
-                <div style={{ width: '100%', height: '100%', overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '100%', height: '100%', overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                   <img
                     src={viewingPdf.url}
                     alt={viewingPdf.title}
@@ -1084,7 +1123,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                       maxWidth: '100%',
                       maxHeight: '100%',
                       objectFit: 'contain',
-                      padding: '16px'
+                      borderRadius: '4px',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
                     }}
                   />
                 </div>
