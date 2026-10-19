@@ -236,10 +236,11 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
   const searchResults = useMemo<SearchResultItem[]>(() => {
     const trimmed = query.trim().toLowerCase();
     if (!trimmed) {
-      // Default recommended items when query is empty
-      return searchIndex
-        .filter((item) => ['page', 'unit'].includes(item.categoryType))
-        .slice(0, 7);
+      // Default preview when query is empty:
+      // Show main pages and limit units to maximum 2 units only
+      const pages = searchIndex.filter((item) => item.categoryType === 'page');
+      const units = searchIndex.filter((item) => item.categoryType === 'unit').slice(0, 2);
+      return [...pages, ...units];
     }
 
     const matches: { item: SearchResultItem; score: number }[] = [];
