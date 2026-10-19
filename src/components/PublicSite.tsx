@@ -50,7 +50,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('site-theme');
       if (saved === 'dark' || saved === 'light') return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      // ค่าเริ่มต้นเข้าเว็บครั้งแรกให้เป็น light เสมอ
+      return 'light';
     }
     return 'light';
   });
