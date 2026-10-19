@@ -604,11 +604,6 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                         >
                           {/* Card Header: Degree Title (หัวข้อใหญ่) */}
                           <div style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '10px',
                             marginBottom: '16px',
                             paddingBottom: '12px',
                             borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
@@ -623,32 +618,6 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                             }}>
                               {edu.degree}
                             </h3>
-
-                            {/* Current Badge */}
-                            {edu.current && (
-                              <span style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '4px 12px',
-                                borderRadius: '9999px',
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                border: '1px solid rgba(16, 185, 129, 0.25)',
-                                color: '#047857',
-                                fontSize: '0.78rem',
-                                fontWeight: 600
-                              }}>
-                                <span style={{
-                                  width: '6px',
-                                  height: '6px',
-                                  borderRadius: '50%',
-                                  backgroundColor: '#10b981',
-                                  display: 'inline-block',
-                                  boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.3)'
-                                }} />
-                                <span>กำลังศึกษาอยู่ (ปัจจุบัน)</span>
-                              </span>
-                            )}
                           </div>
 
                           {/* Card Body */}
