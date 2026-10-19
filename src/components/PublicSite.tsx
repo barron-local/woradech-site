@@ -18,7 +18,9 @@ import {
   Home,
   ArrowUpRight,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Calendar,
+  Sparkles
 } from 'lucide-react';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
 import { PdfDocViewer } from './PdfDocViewer';
@@ -608,145 +610,259 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             {/* Section แสดงประวัติการศึกษา (Education Timeline) */}
             {config.about.education && config.about.education.length > 0 && (
               <div id="about-education" className="search-scroll-target" style={{ marginTop: '64px', borderTop: '1px solid var(--notion-border)', paddingTop: '48px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px' }}>
+                {/* Section Header */}
+                <div style={{ marginBottom: '32px' }}>
                   <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: 'var(--radius-xs)',
-                    backgroundColor: 'var(--notion-sidebar)',
-                    border: '1px solid var(--notion-border)',
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--notion-text)'
+                    gap: '6px',
+                    padding: '4px 12px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                    border: '1px solid rgba(37, 99, 235, 0.16)',
+                    color: '#2563eb',
+                    fontSize: '0.76rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    marginBottom: '10px'
                   }}>
-                    <GraduationCap size={18} />
+                    <GraduationCap size={13} />
+                    <span>Academic Journey</span>
                   </div>
-                  <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0, letterSpacing: '-0.02em' }}>
                     ประวัติการศึกษา (Education)
                   </h2>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--notion-text-muted)', margin: '6px 0 0', fontWeight: 400 }}>
+                    เส้นทางการศึกษาและพัฒนาการด้านวิชาชีพทางเทคโนโลยีสารสนเทศ
+                  </p>
                 </div>
 
                 {/* Timeline Container */}
-                <div style={{ position: 'relative', paddingLeft: '24px' }}>
-                  {/* Vertical Timeline Rule */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '12px',
-                    bottom: '24px',
-                    left: '7px',
-                    width: '2px',
-                    backgroundColor: 'var(--notion-border-dark)'
-                  }} />
+                <div className="edu-timeline-track">
+                  {/* Vertical Timeline Gradient Spine */}
+                  <div className="edu-timeline-spine" />
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
                     {config.about.education.map((edu, idx) => (
-                      <div key={edu.id || idx} id={`edu-${edu.id || idx}`} className="search-scroll-target" style={{ position: 'relative' }}>
-                        {/* Timeline Node Dot */}
-                        <div style={{
-                          position: 'absolute',
-                          top: '6px',
-                          left: '-24px',
-                          width: '16px',
-                          height: '16px',
-                          borderRadius: '50%',
-                          backgroundColor: edu.current ? 'var(--notion-text)' : '#ffffff',
-                          border: '3px solid var(--notion-text)',
-                          boxShadow: '0 0 0 3px rgba(255, 255, 255, 1)'
-                        }} />
+                      <div
+                        key={edu.id || idx}
+                        id={`edu-${edu.id || idx}`}
+                        className="search-scroll-target"
+                        style={{ position: 'relative' }}
+                      >
+                        {/* Timeline Node Marker */}
+                        <div className={`edu-timeline-node ${edu.current ? 'is-current' : ''}`}>
+                          <GraduationCap
+                            size={edu.current ? 19 : 17}
+                            color={edu.current ? '#2563eb' : 'var(--notion-text-muted)'}
+                          />
+                          {edu.current && (
+                            <span
+                              style={{
+                                position: 'absolute',
+                                top: '-2px',
+                                right: '-2px',
+                                width: '10px',
+                                height: '10px',
+                                borderRadius: '50%',
+                                backgroundColor: '#10b981',
+                                border: '2px solid #ffffff',
+                                boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.3)'
+                              }}
+                              title="กำลังศึกษาอยู่"
+                            />
+                          )}
+                        </div>
 
                         {/* Education Card */}
                         <div
-                          className="notion-card edu-card"
-                          style={{
-                            padding: '24px 28px',
-                            display: 'flex',
-                            gap: '24px',
-                            alignItems: 'center',
-                            borderRadius: 'var(--radius-sm)',
-                            border: '1px solid var(--notion-border)',
-                            backgroundColor: '#ffffff'
-                          }}
+                          className={`edu-timeline-card edu-card ${edu.current ? 'is-current' : ''}`}
                         >
-                          {/* School Logo */}
+                          {/* Card Meta Bar (Period & Status) */}
                           <div style={{
-                            width: '72px',
-                            height: '72px',
-                            minWidth: '72px',
-                            borderRadius: '50%',
-                            overflow: 'hidden',
-                            border: '1.5px solid var(--notion-border)',
-                            backgroundColor: '#ffffff',
                             display: 'flex',
+                            flexWrap: 'wrap',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-                            padding: '2px'
+                            justifyContent: 'space-between',
+                            gap: '10px',
+                            marginBottom: '16px',
+                            paddingBottom: '12px',
+                            borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
                           }}>
-                            <img
-                              src={edu.logoUrl}
-                              alt={edu.institution}
-                              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/logo-tnk.jpg";
-                              }}
-                            />
-                          </div>
-
-                          {/* Info */}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
-                              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
-                                {edu.institution}
-                              </h3>
+                            {/* Period Chip */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              {edu.current ? (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '4px 12px',
+                                  borderRadius: '9999px',
+                                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                                  color: '#047857',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 600
+                                }}>
+                                  <span style={{
+                                    width: '6px',
+                                    height: '6px',
+                                    borderRadius: '50%',
+                                    backgroundColor: '#10b981',
+                                    display: 'inline-block',
+                                    boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.3)'
+                                  }} />
+                                  <span>{edu.period || 'ปัจจุบัน'} • กำลังศึกษาอยู่</span>
+                                </span>
+                              ) : (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '4px 12px',
+                                  borderRadius: '9999px',
+                                  backgroundColor: 'rgba(0, 0, 0, 0.035)',
+                                  border: '1px solid rgba(0, 0, 0, 0.06)',
+                                  color: 'var(--notion-text-muted)',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 500
+                                }}>
+                                  <Calendar size={13} style={{ flexShrink: 0 }} />
+                                  <span>{edu.period}</span>
+                                </span>
+                              )}
                             </div>
 
-                            {edu.institutionEn && (
-                              <div style={{ fontSize: '0.88rem', color: 'var(--notion-text-muted)', marginBottom: '10px', fontWeight: 500 }}>
-                                {edu.institutionEn}
-                              </div>
+                            {/* Current Badge */}
+                            {edu.current && (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.74rem',
+                                fontWeight: 600,
+                                color: '#2563eb',
+                                backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em'
+                              }}>
+                                <Sparkles size={11} />
+                                <span>CURRENT STATUS</span>
+                              </span>
                             )}
+                          </div>
 
-                              {/* ระดับการศึกษา (Degree) */}
-                              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: edu.major ? '8px' : '0' }}>
+                          {/* Card Body */}
+                          <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }} className="edu-body-layout">
+                            {/* School Logo */}
+                            <div
+                              className="edu-logo-box"
+                              style={{
+                                width: '68px',
+                                height: '68px',
+                                minWidth: '68px',
+                                borderRadius: '14px',
+                                overflow: 'hidden',
+                                border: '1px solid rgba(0, 0, 0, 0.08)',
+                                backgroundColor: '#ffffff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                                padding: '4px',
+                                flexShrink: 0
+                              }}
+                            >
+                              <img
+                                src={edu.logoUrl}
+                                alt={edu.institution}
+                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = "/logo-tnk.jpg";
+                                }}
+                              />
+                            </div>
+
+                            {/* Info */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <h3 style={{
+                                fontSize: '1.22rem',
+                                fontWeight: 700,
+                                color: 'var(--notion-text)',
+                                margin: '0 0 3px 0',
+                                lineHeight: 1.35
+                              }}>
+                                {edu.institution}
+                              </h3>
+
+                              {edu.institutionEn && (
+                                <div style={{
+                                  fontSize: '0.86rem',
+                                  color: 'var(--notion-text-muted)',
+                                  marginBottom: '14px',
+                                  fontWeight: 400
+                                }}>
+                                  {edu.institutionEn}
+                                </div>
+                              )}
+
+                              {/* Badges: Degree & Major */}
+                              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+                                {/* ระดับการศึกษา (Degree) */}
                                 <div
                                   className="edu-degree-badge"
                                   style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '8px',
-                                    fontSize: '0.88rem',
-                                    color: 'var(--notion-text)',
+                                    gap: '7px',
+                                    fontSize: '0.85rem',
+                                    color: '#1d4ed8',
                                     fontWeight: 600,
-                                    backgroundColor: 'var(--notion-sidebar)',
+                                    backgroundColor: 'rgba(37, 99, 235, 0.06)',
                                     padding: '5px 12px',
-                                    borderRadius: 'var(--radius-xs)',
-                                    border: '1px solid var(--notion-border)',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(37, 99, 235, 0.16)',
                                     maxWidth: '100%',
                                     lineHeight: 1.4
                                   }}
                                 >
-                                  <Award size={15} color="var(--notion-text)" style={{ flexShrink: 0 }} />
+                                  <Award size={14} color="#2563eb" style={{ flexShrink: 0 }} />
                                   <span style={{ wordBreak: 'break-word' }}>{edu.degree}</span>
                                 </div>
 
-                              {/* สาขาวิชา (Major / Field of Study) แยกกล่องต่างหาก */}
-                              {edu.major && (
-                                <div style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  fontSize: '0.88rem',
+                                {/* สาขาวิชา (Major / Field of Study) */}
+                                {edu.major && (
+                                  <div style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    fontSize: '0.85rem',
+                                    color: '#065f46',
+                                    fontWeight: 500,
+                                    backgroundColor: 'rgba(5, 150, 105, 0.06)',
+                                    padding: '5px 12px',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(5, 150, 105, 0.16)'
+                                  }}>
+                                    <BookOpen size={13} color="#059669" style={{ flexShrink: 0 }} />
+                                    <span>{edu.major}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Description (ถ้ามี) */}
+                              {edu.description && (
+                                <p style={{
+                                  fontSize: '0.875rem',
                                   color: 'var(--notion-text-muted)',
-                                  fontWeight: 500,
-                                  backgroundColor: '#ffffff',
-                                  padding: '5px 12px',
-                                  borderRadius: 'var(--radius-xs)',
-                                  border: '1px solid var(--notion-border)'
+                                  margin: '12px 0 0',
+                                  lineHeight: 1.6
                                 }}>
-                                  <BookOpen size={14} color="var(--notion-text-muted)" />
-                                  <span>{edu.major}</span>
-                                </div>
+                                  {edu.description}
+                                </p>
                               )}
                             </div>
                           </div>
