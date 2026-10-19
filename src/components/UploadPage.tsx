@@ -1156,19 +1156,6 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                          <span style={{
-                            fontSize: '0.74rem',
-                            fontWeight: 700,
-                            padding: '2px 8px',
-                            borderRadius: '12px',
-                            backgroundColor: item.sectionBg || '#eff6ff',
-                            color: item.sectionColor || '#1e40af',
-                            border: `1px solid ${item.sectionBorder || '#bfdbfe'}`
-                          }}>
-                            ป้ายกำกับหน่วย / SECTION
-                          </span>
-                        </div>
                         <span style={{
                           fontSize: '1.08rem',
                           fontWeight: 700,
