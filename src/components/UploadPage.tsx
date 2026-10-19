@@ -710,20 +710,6 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                         }}>
                           {item.title}
                         </span>
-
-                        {/* File Format Badge */}
-                        <span style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 600,
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          backgroundColor: isImage ? '#eff6ff' : '#fef2f2',
-                          color: isImage ? '#1d4ed8' : '#b91c1c',
-                          border: `1px solid ${isImage ? '#bfdbfe' : '#fecaca'}`,
-                          flexShrink: 0
-                        }}>
-                          {isImage ? 'IMAGE' : 'PDF'}
-                        </span>
                       </div>
 
                       {item.description && (
