@@ -20,6 +20,14 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   onReorderProjects,
   onNavigateToPortfolio
 }) => {
+  // Local state for instantaneous UI updates when reordering
+  const [localItems, setLocalItems] = useState<PortfolioItem[]>(projects);
+
+  // Sync localItems whenever projects prop updates
+  React.useEffect(() => {
+    setLocalItems(projects);
+  }, [projects]);
+
   // Drag and Drop & Reordering State
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -252,10 +260,14 @@ export const UploadPage: React.FC<UploadPageProps> = ({
 
   // Reordering handlers
   const handleMoveItem = (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= projects.length) return;
-    const reordered = [...projects];
+    if (toIndex < 0 || toIndex >= localItems.length || fromIndex === toIndex) return;
+    const reordered = [...localItems];
     const [movedItem] = reordered.splice(fromIndex, 1);
     reordered.splice(toIndex, 0, movedItem);
+    
+    // Immediate local update for zero delay
+    setLocalItems(reordered);
+
     if (onReorderProjects) {
       onReorderProjects(reordered);
     }
@@ -493,7 +505,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           )}
         </div>
 
-        {projects.length === 0 ? (
+        {localItems.length === 0 ? (
           <div style={{
             padding: '36px',
             textAlign: 'center',
@@ -506,7 +518,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {projects.map((item, idx) => {
+            {localItems.map((item, idx) => {
               const isImage = item.category === 'Image' || (item.fileName && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(item.fileName));
               const isBeingDragged = draggedIndex === idx;
               const isDraggedOver = dragOverIndex === idx && draggedIndex !== idx;
@@ -640,14 +652,14 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                           e.stopPropagation();
                           handleMoveItem(idx, idx + 1);
                         }}
-                        disabled={idx === projects.length - 1}
+                        disabled={idx === localItems.length - 1}
                         title="เลื่อนลงด้านล่าง"
                         style={{
                           background: 'none',
                           border: 'none',
                           padding: '1px',
-                          cursor: idx === projects.length - 1 ? 'not-allowed' : 'pointer',
-                          opacity: idx === projects.length - 1 ? 0.25 : 0.7,
+                          cursor: idx === localItems.length - 1 ? 'not-allowed' : 'pointer',
+                          opacity: idx === localItems.length - 1 ? 0.25 : 0.7,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',

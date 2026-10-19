@@ -280,3 +280,25 @@ export async function deleteProjectFromSupabase(id: string): Promise<{ success: 
     return { success: false, error: err.message || 'เกิดข้อผิดพลาดในการลบ' };
   }
 }
+
+// Sync new project order to Supabase by adjusting created_at timestamps
+export async function syncProjectOrderToSupabase(reorderedProjects: PortfolioItem[]): Promise<void> {
+  const supabase = getSupabaseClient();
+  if (!supabase || !reorderedProjects || reorderedProjects.length === 0) return;
+
+  try {
+    // Generate timestamps with 10-second intervals so order is preserved
+    const baseTime = Date.now() - (reorderedProjects.length * 60 * 1000);
+    const updates = reorderedProjects.map((project, index) => {
+      const newTimestamp = new Date(baseTime + (index * 10 * 1000)).toISOString();
+      return supabase
+        .from('projects')
+        .update({ created_at: newTimestamp })
+        .eq('id', project.id);
+    });
+
+    await Promise.allSettled(updates);
+  } catch (err) {
+    console.warn('Failed to sync project order to Supabase:', err);
+  }
+}
