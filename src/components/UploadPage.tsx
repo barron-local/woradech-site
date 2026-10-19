@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { PortfolioItem } from '../types';
-import { UploadCloud, FileText, CheckCircle2, Edit2, Trash2, ExternalLink, X, Save, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, Edit2, Trash2, ExternalLink, X, Save, AlertCircle, Image as ImageIcon, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { uploadProjectToSupabase, updateProjectInSupabase, deleteProjectFromSupabase } from '../supabase';
 
 interface UploadPageProps {
@@ -8,6 +8,7 @@ interface UploadPageProps {
   onAddProject: (item: PortfolioItem) => void;
   onUpdateProject: (item: PortfolioItem) => void;
   onDeleteProject: (id: string) => void;
+  onReorderProjects?: (items: PortfolioItem[]) => void;
   onNavigateToPortfolio?: () => void;
 }
 
@@ -16,8 +17,13 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   onAddProject,
   onUpdateProject,
   onDeleteProject,
+  onReorderProjects,
   onNavigateToPortfolio
 }) => {
+  // Drag and Drop & Reordering State
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   // Form State for New Upload
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -244,6 +250,46 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     }
   };
 
+  // Reordering handlers
+  const handleMoveItem = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= projects.length) return;
+    const reordered = [...projects];
+    const [movedItem] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, movedItem);
+    if (onReorderProjects) {
+      onReorderProjects(reordered);
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    const sourceIndex = draggedIndex !== null ? draggedIndex : parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (!isNaN(sourceIndex) && sourceIndex !== targetIndex) {
+      handleMoveItem(sourceIndex, targetIndex);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
   return (
     <div style={{ maxWidth: '820px', margin: '40px auto', padding: '0 24px 80px' }}>
       
@@ -405,9 +451,14 @@ export const UploadPage: React.FC<UploadPageProps> = ({
       {/* 2. MANAGE EXISTING PROJECTS LIST */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
-            รายการผลงานทั้งหมด ({projects.length})
-          </h2>
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
+              รายการผลงานทั้งหมด ({projects.length})
+            </h2>
+            <p style={{ fontSize: '0.82rem', color: 'var(--notion-text-muted)', margin: '4px 0 0 0' }}>
+              💡 สามารถคลิกค้างที่ไอคอน ⠿ เพื่อลากสลับลำดับ หรือใช้ปุ่ม ▲ ▼ เพื่อเลื่อนตำแหน่งการแสดงผลได้ทันที
+            </p>
+          </div>
           {onNavigateToPortfolio && (
             <button
               onClick={onNavigateToPortfolio}
@@ -457,30 +508,164 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {projects.map((item, idx) => {
               const isImage = item.category === 'Image' || (item.fileName && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(item.fileName));
+              const isBeingDragged = draggedIndex === idx;
+              const isDraggedOver = dragOverIndex === idx && draggedIndex !== idx;
+
               return (
                 <div
                   key={item.id || idx}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDrop={(e) => handleDrop(e, idx)}
+                  onDragEnd={handleDragEnd}
                   style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid var(--notion-border)',
+                    backgroundColor: isDraggedOver ? '#eff6ff' : '#ffffff',
+                    border: isDraggedOver
+                      ? '2px dashed #3b82f6'
+                      : '1px solid var(--notion-border)',
                     borderRadius: '10px',
-                    padding: '14px 18px',
+                    padding: '12px 16px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '18px',
-                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
-                    transition: 'all 0.15s ease'
+                    gap: '14px',
+                    boxShadow: isBeingDragged
+                      ? '0 10px 25px rgba(0, 0, 0, 0.15)'
+                      : '0 2px 6px rgba(0, 0, 0, 0.03)',
+                    opacity: isBeingDragged ? 0.45 : 1,
+                    transform: isBeingDragged ? 'scale(0.98)' : 'none',
+                    transition: 'border 0.15s, background-color 0.15s, box-shadow 0.15s, opacity 0.15s, transform 0.15s',
+                    position: 'relative'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--notion-border-dark)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.06)';
+                    if (!isBeingDragged && !isDraggedOver) {
+                      e.currentTarget.style.borderColor = 'var(--notion-border-dark)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.06)';
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--notion-border)';
-                    e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.03)';
+                    if (!isBeingDragged && !isDraggedOver) {
+                      e.currentTarget.style.borderColor = 'var(--notion-border)';
+                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.03)';
+                    }
                   }}
                 >
+                  {/* Drag Handle & Order Controls */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    color: 'var(--notion-text-muted)',
+                    userSelect: 'none',
+                    flexShrink: 0
+                  }}>
+                    {/* Visual Drag Grip Handle */}
+                    <div
+                      title="คลิกค้างเพื่อลากสลับลำดับ"
+                      style={{
+                        cursor: 'grab',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '6px 4px',
+                        borderRadius: '4px',
+                        transition: 'background-color 0.15s, color 0.15s',
+                        color: '#9ca3af'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--notion-sidebar)';
+                        e.currentTarget.style.color = 'var(--notion-text)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = '#9ca3af';
+                      }}
+                    >
+                      <GripVertical size={18} />
+                    </div>
+
+                    {/* Numeric Order Badge */}
+                    <span style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      color: 'var(--notion-text-muted)',
+                      backgroundColor: 'var(--notion-sidebar)',
+                      border: '1px solid var(--notion-border)',
+                      borderRadius: '6px',
+                      minWidth: '24px',
+                      height: '24px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 4px'
+                    }}>
+                      #{idx + 1}
+                    </span>
+
+                    {/* Quick Move Up/Down Buttons */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveItem(idx, idx - 1);
+                        }}
+                        disabled={idx === 0}
+                        title="เลื่อนขึ้นด้านบน"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '1px',
+                          cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                          opacity: idx === 0 ? 0.25 : 0.7,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--notion-text)',
+                          borderRadius: '2px'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (idx > 0) e.currentTarget.style.opacity = '1';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (idx > 0) e.currentTarget.style.opacity = '0.7';
+                        }}
+                      >
+                        <ChevronUp size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveItem(idx, idx + 1);
+                        }}
+                        disabled={idx === projects.length - 1}
+                        title="เลื่อนลงด้านล่าง"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '1px',
+                          cursor: idx === projects.length - 1 ? 'not-allowed' : 'pointer',
+                          opacity: idx === projects.length - 1 ? 0.25 : 0.7,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--notion-text)',
+                          borderRadius: '2px'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (idx < projects.length - 1) e.currentTarget.style.opacity = '1';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (idx < projects.length - 1) e.currentTarget.style.opacity = '0.7';
+                        }}
+                      >
+                        <ChevronDown size={14} />
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Left: Thumbnail & Main Info */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
                     {/* Thumbnail Preview */}

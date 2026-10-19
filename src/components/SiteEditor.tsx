@@ -11,6 +11,7 @@ interface SiteEditorProps {
   onAddProject?: (item: PortfolioItem) => void;
   onUpdateProject?: (item: PortfolioItem) => void;
   onDeleteProject?: (id: string) => void;
+  onReorderProjects?: (items: PortfolioItem[]) => void;
 }
 
 export const SiteEditor: React.FC<SiteEditorProps> = ({
@@ -20,7 +21,8 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
   projects = [],
   onAddProject = () => {},
   onUpdateProject = () => {},
-  onDeleteProject = () => {}
+  onDeleteProject = () => {},
+  onReorderProjects = () => {}
 }) => {
   // Only 2 tabs: 'carousel' and 'upload'
   const [activeTab, setActiveTab] = useState<'carousel' | 'upload'>('carousel');
@@ -352,6 +354,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
             onAddProject={onAddProject}
             onUpdateProject={onUpdateProject}
             onDeleteProject={onDeleteProject}
+            onReorderProjects={onReorderProjects}
           />
         )}
 

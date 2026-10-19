@@ -174,6 +174,18 @@ export default function App() {
     saveSiteConfig(updated);
   };
 
+  const handleReorderProjects = (reorderedProjects: PortfolioItem[]) => {
+    const updated = {
+      ...config,
+      portfolio: {
+        ...config.portfolio,
+        items: reorderedProjects
+      }
+    };
+    setConfig(updated);
+    saveSiteConfig(updated);
+  };
+
   return (
     <>
       {isEditorOpen ? (
@@ -191,6 +203,7 @@ export default function App() {
             onAddProject={handleAddProject}
             onUpdateProject={handleUpdateProject}
             onDeleteProject={handleDeleteProject}
+            onReorderProjects={handleReorderProjects}
           />
         )
       ) : (
