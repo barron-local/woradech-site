@@ -523,6 +523,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
               return (
                 <div
                   key={item.id || idx}
+                  className="upload-item-card"
                   draggable
                   onDragStart={(e) => handleDragStart(e, idx)}
                   onDragOver={(e) => handleDragOver(e, idx)}
@@ -765,7 +766,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                   </div>
 
                   {/* Right: Actions */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                  <div className="upload-item-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                     <button
                       onClick={() => startEdit(item)}
                       className="notion-btn"
@@ -831,15 +832,18 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           justifyContent: 'center',
           padding: '16px'
         }}>
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: 'var(--radius-sm)',
-            width: '100%',
-            maxWidth: '560px',
-            border: '1px solid var(--notion-border)',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
-            overflow: 'hidden'
-          }}>
+          <div
+            className="responsive-modal"
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: 'var(--radius-sm)',
+              width: '100%',
+              maxWidth: '560px',
+              border: '1px solid var(--notion-border)',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+              overflow: 'hidden'
+            }}
+          >
             {/* Modal Header */}
             <div style={{
               display: 'flex',
@@ -1030,15 +1034,18 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           padding: '16px',
           animation: 'fadeIn 0.15s ease-out'
         }}>
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: 'var(--radius-sm)',
-            width: '100%',
-            maxWidth: '440px',
-            border: '1px solid var(--notion-border)',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
-            overflow: 'hidden'
-          }}>
+          <div
+            className="responsive-modal"
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: 'var(--radius-sm)',
+              width: '100%',
+              maxWidth: '440px',
+              border: '1px solid var(--notion-border)',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+              overflow: 'hidden'
+            }}
+          >
             {/* Modal Header */}
             <div style={{
               display: 'flex',

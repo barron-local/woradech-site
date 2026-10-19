@@ -84,50 +84,59 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
       flexDirection: 'column'
     }}>
       {/* 1. Header Bar */}
-      <header style={{
-        height: '54px',
-        borderBottom: '1px solid var(--notion-border)',
-        backgroundColor: '#ffffff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 24px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-      }}>
+      <header
+        className="editor-header"
+        style={{
+          minHeight: '54px',
+          borderBottom: '1px solid var(--notion-border)',
+          backgroundColor: '#ffffff',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '8px 16px',
+          gap: '10px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100
+        }}
+      >
         {/* Left: Back */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
             onClick={onCloseEditor}
             className="notion-btn"
             style={{
-              fontSize: '0.86rem',
+              fontSize: '0.84rem',
               fontWeight: 500,
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '6px 10px',
               borderRadius: 'var(--radius-xs)',
               border: '1px solid var(--notion-border)',
               backgroundColor: '#ffffff'
             }}
           >
             <ArrowLeft size={15} />
-            <span>กลับหน้าหลัก (Back to Site)</span>
+            <span>กลับหน้าหลัก</span>
           </button>
         </div>
 
         {/* Right: Modern Prominent Tabs Switcher */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
+        <div
+          className="editor-tabs"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            flexWrap: 'wrap'
+          }}
+        >
           <button
             onClick={() => setActiveTab('carousel')}
             style={{
-              fontSize: '0.92rem',
+              fontSize: '0.86rem',
               fontWeight: activeTab === 'carousel' ? 700 : 500,
               backgroundColor: activeTab === 'carousel' ? 'var(--notion-text)' : '#ffffff',
               color: activeTab === 'carousel' ? '#ffffff' : 'var(--notion-text)',
@@ -150,7 +159,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
           <button
             onClick={() => setActiveTab('upload')}
             style={{
-              fontSize: '0.92rem',
+              fontSize: '0.86rem',
               fontWeight: activeTab === 'upload' ? 700 : 500,
               backgroundColor: activeTab === 'upload' ? 'var(--notion-text)' : '#ffffff',
               color: activeTab === 'upload' ? '#ffffff' : 'var(--notion-text)',
@@ -158,7 +167,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
               borderColor: activeTab === 'upload' ? 'var(--notion-text)' : 'var(--notion-border)',
               borderRadius: 'var(--radius-xs)',
               boxShadow: activeTab === 'upload' ? '0 2px 6px rgba(0,0,0,0.15)' : '0 1px 2px rgba(0,0,0,0.03)',
-              padding: '8px 18px',
+              padding: '8px 14px',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',

@@ -189,18 +189,21 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
         {currentPage === 'home' && (
           <div>
             {/* 2. HERO SECTION: Full-width Edge-to-Edge and Full Screen */}
-            <section style={{
-              width: '100%',
-              height: 'calc(100vh - 52px)',
-              maxHeight: '780px',
-              minHeight: '460px',
-              position: 'relative',
-              overflow: 'hidden',
-              backgroundColor: '#0f0f11',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
+            <section
+              className="hero-section"
+              style={{
+                width: '100%',
+                height: 'calc(100vh - 52px)',
+                maxHeight: '780px',
+                minHeight: '460px',
+                position: 'relative',
+                overflow: 'hidden',
+                backgroundColor: '#0f0f11',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
               {/* Blurred atmospheric backdrop to blend edges */}
               <div
                 style={{
@@ -614,11 +617,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             {/* Portfolio Grid or Empty State or Initial Loading Skeleton */}
             {config.portfolio.items.length === 0 ? (
               isInitialLoading ? (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
-                  gap: '28px'
-                }}>
+                <div className="portfolio-grid">
                   {[1, 2].map((k) => (
                     <div
                       key={k}
@@ -666,12 +665,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                 </div>
               )
             ) : (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-                gap: '24px',
-                alignItems: 'start'
-              }}>
+              <div className="portfolio-grid">
                 {config.portfolio.items.map((item) => (
                   <div
                     key={item.id}

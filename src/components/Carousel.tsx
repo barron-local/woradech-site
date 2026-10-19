@@ -64,7 +64,7 @@ export const Carousel: React.FC<CarouselProps> = ({
         backgroundColor: '#ffffff'
       }}>
         {/* Slide Image */}
-        <div style={{ position: 'relative', height: '440px', width: '100%', overflow: 'hidden' }}>
+        <div className="carousel-slide-frame" style={{ position: 'relative', height: '440px', width: '100%', overflow: 'hidden' }}>
           <img
             src={current.imageUrl}
             alt={current.title}
@@ -79,7 +79,7 @@ export const Carousel: React.FC<CarouselProps> = ({
 
           {/* Slide Caption Overlay (Only when title or caption is provided) */}
           {(current.title || current.caption) && (
-            <div style={{
+            <div className="carousel-caption-overlay" style={{
               position: 'absolute',
               bottom: 0,
               left: 0,

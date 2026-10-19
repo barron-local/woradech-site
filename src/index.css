@@ -194,3 +194,109 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb:hover {
   background: #9b9a97;
 }
+
+/* ========================================================
+   RESPONSIVE DESIGN (100% Mobile, Tablet & Desktop Support)
+   ======================================================== */
+
+/* Navigation Bar Responsive */
+.mobile-toggle {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  .mobile-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* About Page Responsive Grid */
+@media (max-width: 860px) {
+  .about-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  .about-grid .notion-card[style*="position: sticky"],
+  .about-grid .notion-card {
+    position: static !important;
+    top: auto !important;
+  }
+}
+
+/* Portfolio Grid Responsive (auto-adjust from 1 column on mobile to 2 on desktop) */
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+@media (max-width: 640px) {
+  .portfolio-grid {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+
+  .hero-section {
+    height: 52vh !important;
+    min-height: 260px !important;
+    max-height: 440px !important;
+  }
+
+  .carousel-slide-frame {
+    height: 260px !important;
+  }
+
+  .carousel-caption-overlay {
+    padding: 16px 18px !important;
+  }
+
+  .carousel-caption-overlay h3 {
+    font-size: 1.1rem !important;
+  }
+
+  /* Admin Upload Project Item Row */
+  .upload-item-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  .upload-item-actions {
+    width: 100% !important;
+    justify-content: flex-end !important;
+  }
+
+  /* Modal Width & Sizing */
+  .responsive-modal {
+    width: 95vw !important;
+    margin: 10px auto !important;
+  }
+
+  /* Typography scale on mobile */
+  h1 {
+    font-size: 1.85rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section {
+    height: 45vh !important;
+    min-height: 220px !important;
+  }
+
+  .carousel-slide-frame {
+    height: 210px !important;
+  }
+
+  .portfolio-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
