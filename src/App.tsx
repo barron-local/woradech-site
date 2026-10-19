@@ -4,7 +4,7 @@ import { loadSiteConfig, saveSiteConfig } from './types';
 import { PublicSite, type PageRoute } from './components/PublicSite';
 import { SiteEditor } from './components/SiteEditor';
 import { AdminPinModal } from './components/AdminPinModal';
-import { fetchProjectsFromSupabase, syncProjectOrderToSupabase } from './supabase';
+import { fetchProjectsFromSupabase, syncProjectOrderToSupabase, getSupabaseClient } from './supabase';
 
 export default function App() {
   const [config, setConfig] = useState<SiteConfig>(() => loadSiteConfig());
@@ -33,14 +33,17 @@ export default function App() {
     return params.get('mode') === 'editor' || path === 'editor' || path === 'admin' || hash === 'editor' || hash === 'admin';
   });
 
-  // Realtime polling every 1 sec from Supabase and sync with localStorage
+  // Realtime synchronization: Supabase Realtime channel + local storage/broadcast sync + polling fallback
   useEffect(() => {
     let isMounted = true;
+    let isFetching = false;
 
     async function pollProjects() {
+      if (isFetching) return;
+      isFetching = true;
       try {
         const cloudItems = await fetchProjectsFromSupabase();
-        if (cloudItems && isMounted) {
+        if (cloudItems && isMounted && cloudItems.length > 0) {
           setConfig((prev) => {
             const currentStr = JSON.stringify(prev.portfolio.items);
             const cloudStr = JSON.stringify(cloudItems);
@@ -62,21 +65,51 @@ export default function App() {
       } catch (e) {
         // quiet error to prevent spamming console
       } finally {
+        isFetching = false;
         if (isMounted) {
           setIsInitialLoading(false);
         }
       }
     }
 
-    // Initial fetch
+    // 1. Initial fetch
     pollProjects();
 
-    // Poll every 1000ms (1 sec)
-    const interval = setInterval(pollProjects, 1000);
+    // 2. Cross-tab synchronization (updates immediately across tabs when items/order change)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'woradech_portfolio_items_cache' || e.key?.startsWith('woradech_notion_site_config_')) {
+        const refreshedConfig = loadSiteConfig();
+        setConfig(refreshedConfig);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    // 3. Supabase Realtime subscription for instant cloud updates
+    const supabase = getSupabaseClient();
+    let channel: any = null;
+    if (supabase) {
+      try {
+        channel = supabase
+          .channel('public:projects')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
+            pollProjects();
+          })
+          .subscribe();
+      } catch (err) {
+        // Realtime subscription fallback
+      }
+    }
+
+    // 4. Polling heartbeat every 2000ms (balanced to avoid QUIC timeouts while staying responsive)
+    const interval = setInterval(pollProjects, 2000);
 
     return () => {
       isMounted = false;
       clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
     };
   }, []);
 

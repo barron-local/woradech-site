@@ -32,74 +32,93 @@ export interface SupabaseProjectRow {
   created_at?: string;
 }
 
-// Fetch all uploaded projects from Supabase
+// Safe select columns (avoid selecting massive multi-megabyte base64 strings if not needed)
+// If row contains stored URL in storage, it's small.
 export async function fetchProjectsFromSupabase(): Promise<PortfolioItem[] | null> {
   const supabase = getSupabaseClient();
   if (!supabase) return null;
 
   try {
-    const { data, error } = await supabase
+    // Wrap supabase request in a timeout (5 seconds) so it never hangs or locks
+    const fetchPromise = supabase
       .from('projects')
-      .select('*')
+      .select('id, title, category, description, file_name, pdf_url, image_url, created_at')
       .order('created_at', { ascending: true });
 
+    const timeoutPromise = new Promise<{ data: null; error: any }>((_, reject) =>
+      setTimeout(() => reject(new Error('Supabase request timeout')), 5000)
+    );
+
+    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
     if (error) {
-      console.warn('Supabase fetch error:', error);
+      // If error is statement timeout, try fallback to minimal columns without pdf_url
+      if (error.code === '57014' || error.message?.includes('timeout')) {
+        const fallbackRes = await supabase
+          .from('projects')
+          .select('id, title, category, description, file_name, created_at')
+          .order('created_at', { ascending: true });
+
+        if (fallbackRes.data) {
+          return fallbackRes.data.map((row: SupabaseProjectRow) => parseProjectRow(row));
+        }
+      }
       return null;
     }
 
     if (data) {
-      return data.map((row: SupabaseProjectRow) => {
-        const isSection = (row.category || '').startsWith('SECTION:::') || row.category === 'Section';
-        let sectionBg = '#f3f4f6';
-        let sectionColor = '#1f2937';
-        let sectionBorder = '#e5e7eb';
-        let sectionShowBar = true;
-        let sectionFontSize = '1.28rem';
-        let sectionAlign: 'left' | 'center' | 'right' = 'left';
-        let realCategory = row.category || 'PDF Document';
-
-        if (row.category && row.category.startsWith('SECTION:::')) {
-          const parts = row.category.split(':::');
-          // parts: ['SECTION', bg, color, border, showBar ('1'|'0'), fontSize, align, optional category name]
-          sectionBg = parts[1] || sectionBg;
-          sectionColor = parts[2] || sectionColor;
-          sectionBorder = parts[3] || sectionBorder;
-          if (parts.length > 5) {
-            sectionShowBar = parts[4] !== '0';
-            sectionFontSize = parts[5] || sectionFontSize;
-            sectionAlign = (parts[6] as 'left' | 'center' | 'right') || 'left';
-            realCategory = parts[7] || 'Section';
-          } else {
-            realCategory = parts[4] || 'Section';
-          }
-        }
-
-        return {
-          id: row.id || `p-${Date.now()}`,
-          title: row.title,
-          category: realCategory,
-          description: row.description || '',
-          imageUrl: row.image_url || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
-          pdfUrl: row.pdf_url,
-          fileName: row.file_name,
-          link: row.pdf_url,
-          tags: isSection ? ['Section'] : ['PDF', realCategory],
-          createdAt: row.created_at,
-          itemType: isSection ? 'section' : 'project',
-          sectionBg: isSection ? sectionBg : undefined,
-          sectionColor: isSection ? sectionColor : undefined,
-          sectionBorder: isSection ? sectionBorder : undefined,
-          sectionShowBar: isSection ? sectionShowBar : undefined,
-          sectionFontSize: isSection ? sectionFontSize : undefined,
-          sectionAlign: isSection ? sectionAlign : undefined
-        };
-      });
+      return data.map((row: SupabaseProjectRow) => parseProjectRow(row));
     }
   } catch (err) {
-    console.error('Error fetching from Supabase:', err);
+    // Quiet fail to allow localStorage/cache fallback seamlessly
   }
   return null;
+}
+
+function parseProjectRow(row: SupabaseProjectRow): PortfolioItem {
+  const isSection = (row.category || '').startsWith('SECTION:::') || row.category === 'Section';
+  let sectionBg = '#f3f4f6';
+  let sectionColor = '#1f2937';
+  let sectionBorder = '#e5e7eb';
+  let sectionShowBar = true;
+  let sectionFontSize = '1.28rem';
+  let sectionAlign: 'left' | 'center' | 'right' = 'left';
+  let realCategory = row.category || 'PDF Document';
+
+  if (row.category && row.category.startsWith('SECTION:::')) {
+    const parts = row.category.split(':::');
+    sectionBg = parts[1] || sectionBg;
+    sectionColor = parts[2] || sectionColor;
+    sectionBorder = parts[3] || sectionBorder;
+    if (parts.length > 5) {
+      sectionShowBar = parts[4] !== '0';
+      sectionFontSize = parts[5] || sectionFontSize;
+      sectionAlign = (parts[6] as 'left' | 'center' | 'right') || 'left';
+      realCategory = parts[7] || 'Section';
+    } else {
+      realCategory = parts[4] || 'Section';
+    }
+  }
+
+  return {
+    id: row.id || `p-${Date.now()}`,
+    title: row.title,
+    category: realCategory,
+    description: row.description || '',
+    imageUrl: row.image_url || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+    pdfUrl: row.pdf_url,
+    fileName: row.file_name,
+    link: row.pdf_url,
+    tags: isSection ? ['Section'] : ['PDF', realCategory],
+    createdAt: row.created_at,
+    itemType: isSection ? 'section' : 'project',
+    sectionBg: isSection ? sectionBg : undefined,
+    sectionColor: isSection ? sectionColor : undefined,
+    sectionBorder: isSection ? sectionBorder : undefined,
+    sectionShowBar: isSection ? sectionShowBar : undefined,
+    sectionFontSize: isSection ? sectionFontSize : undefined,
+    sectionAlign: isSection ? sectionAlign : undefined
+  };
 }
 
 // Upload file to Supabase Storage and insert row into database
@@ -145,6 +164,11 @@ export async function uploadProjectToSupabase(params: {
 
     const itemCategory = params.category || (isImage ? 'Image' : 'PDF Document');
 
+    // Never insert megabytes of base64 directly into PostgreSQL row because it causes PostgREST statement timeout (57014)
+    const isDataUrl = publicFileUrl.startsWith('data:');
+    const safeDbUrl = isDataUrl ? '' : publicFileUrl;
+    const safeCoverUrl = (isImage && !isDataUrl) ? publicFileUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
+
     const { data: inserted, error: insertError } = await supabase
       .from('projects')
       .insert([
@@ -153,8 +177,8 @@ export async function uploadProjectToSupabase(params: {
           category: itemCategory,
           description: params.description || '',
           file_name: params.file.name,
-          pdf_url: publicFileUrl,
-          image_url: defaultCover
+          pdf_url: safeDbUrl,
+          image_url: safeCoverUrl
         }
       ])
       .select()
@@ -354,11 +378,9 @@ export async function updateProjectInSupabase(params: {
           updatePayload.category = 'Image';
         }
       } else {
-        const dataUrl = await fileToDataUrl(params.newFile);
-        updatePayload.pdf_url = dataUrl;
+        // Do not upload massive base64 to postgres database
         updatePayload.file_name = params.newFile.name;
         if (isImage) {
-          updatePayload.image_url = dataUrl;
           updatePayload.category = 'Image';
         }
       }
