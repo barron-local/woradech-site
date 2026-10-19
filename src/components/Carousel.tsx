@@ -330,43 +330,35 @@ export const Carousel: React.FC<CarouselProps> = ({
           )}
         </div>
 
-        {/* Dots Indicator (Preserving user's requested circular dot style) */}
+        {/* Dots Indicator */}
         {slides.length > 1 && (
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
               justifyContent: 'center',
-              gap: '10px',
-              padding: '13px 16px',
+              gap: '8px',
+              padding: '12px',
               backgroundColor: '#ffffff',
               borderTop: '1px solid var(--notion-border)'
             }}
           >
-            {slides.map((_, idx) => {
-              const isActive = idx === currentIndex;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => goToSlide(idx)}
-                  style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: isActive ? 'var(--notion-text)' : 'var(--notion-border-dark)',
-                    border: 'none',
-                    padding: 0,
-                    cursor: 'pointer',
-                    transform: isActive ? 'scale(1.3)' : 'scale(1)',
-                    opacity: isActive ? 1 : 0.45,
-                    boxShadow: isActive ? '0 0 0 3px rgba(37, 99, 235, 0.16)' : 'none',
-                    transition: 'all 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
-                    outline: 'none'
-                  }}
-                  aria-label={`Go to slide ${idx + 1}`}
-                />
-              );
-            })}
+            {slides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => goToSlide(idx)}
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: idx === currentIndex ? 'var(--notion-text)' : 'var(--notion-border-dark)',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease, opacity 0.2s ease'
+                }}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
           </div>
         )}
       </div>
