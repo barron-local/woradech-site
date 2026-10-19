@@ -786,23 +786,22 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                                   height: '100%'
                                 }}
                               >
-                                {/* Clickable Image to view PDF directly */}
+                                {/* Clickable Card to view PDF or Image directly */}
                                 <div
                                   onClick={() => {
-                                    if (item.pdfUrl) {
-                                      setViewingPdf({ url: item.pdfUrl, title: item.title });
-                                    } else if (item.link) {
-                                      window.open(item.link, '_blank');
+                                    const viewUrl = item.pdfUrl || item.link || item.imageUrl;
+                                    if (viewUrl) {
+                                      setViewingPdf({ url: viewUrl, title: item.title });
                                     }
                                   }}
                                   style={{
                                     height: '210px',
                                     overflow: 'hidden',
                                     borderBottom: '1px solid var(--notion-border)',
-                                    cursor: (item.pdfUrl || item.link) ? 'pointer' : 'default',
+                                    cursor: 'pointer',
                                     position: 'relative'
                                   }}
-                                  title={item.pdfUrl ? "คลิกเพื่อเปิดดูเอกสาร" : item.title}
+                                  title="คลิกเพื่อเปิดดูรูปภาพ / เอกสาร"
                                 >
                                   <img
                                     src={item.imageUrl}
@@ -838,10 +837,9 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                                     }}>
                                       <h3
                                         onClick={() => {
-                                          if (item.pdfUrl) {
-                                            setViewingPdf({ url: item.pdfUrl, title: item.title });
-                                          } else if (item.link) {
-                                            window.open(item.link, '_blank');
+                                          const viewUrl = item.pdfUrl || item.link || item.imageUrl;
+                                          if (viewUrl) {
+                                            setViewingPdf({ url: viewUrl, title: item.title });
                                           }
                                         }}
                                         style={{
@@ -850,11 +848,11 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                                           color: 'var(--notion-text)',
                                           lineHeight: 1.4,
                                           margin: 0,
-                                          cursor: (item.pdfUrl || item.link) ? 'pointer' : 'default',
+                                          cursor: 'pointer',
                                           transition: 'color 0.15s ease'
                                         }}
                                         onMouseEnter={(e) => {
-                                          if (item.pdfUrl || item.link) (e.currentTarget as HTMLElement).style.color = '#2563eb';
+                                          (e.currentTarget as HTMLElement).style.color = '#2563eb';
                                         }}
                                         onMouseLeave={(e) => {
                                           (e.currentTarget as HTMLElement).style.color = 'var(--notion-text)';
@@ -863,11 +861,16 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                                         {item.title}
                                       </h3>
 
-                                      {(item.pdfUrl || item.link) && (
-                                        <span style={{ color: 'var(--notion-text-muted)', flexShrink: 0, marginTop: '2px' }}>
-                                          <ArrowUpRight size={17} />
-                                        </span>
-                                      )}
+                                      <span style={{ color: 'var(--notion-text-muted)', flexShrink: 0, marginTop: '2px', cursor: 'pointer' }}
+                                        onClick={() => {
+                                          const viewUrl = item.pdfUrl || item.link || item.imageUrl;
+                                          if (viewUrl) {
+                                            setViewingPdf({ url: viewUrl, title: item.title });
+                                          }
+                                        }}
+                                      >
+                                        <ArrowUpRight size={17} />
+                                      </span>
                                     </div>
 
                                     {/* Description */}
