@@ -673,6 +673,11 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                     const textColor = item.sectionColor || '#1f2937';
                     const borderColor = item.sectionBorder || '#e5e7eb';
 
+                    const showBar = item.sectionShowBar !== false;
+                    const fontSize = item.sectionFontSize || '1.28rem';
+                    const align = item.sectionAlign || 'left';
+                    const justifyContent = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
+
                     return (
                       <div
                         key={item.id}
@@ -687,22 +692,32 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                           marginBottom: '6px',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'space-between',
+                          justifyContent: justifyContent,
+                          textAlign: align,
                           gap: '16px',
                           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
                           position: 'relative'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{
-                            width: '8px',
-                            height: '24px',
-                            borderRadius: '4px',
-                            backgroundColor: textColor,
-                            opacity: 0.8
-                          }} />
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: justifyContent,
+                          gap: '12px',
+                          width: align === 'center' ? '100%' : 'auto'
+                        }}>
+                          {showBar && (
+                            <div style={{
+                              width: '8px',
+                              height: '24px',
+                              borderRadius: '4px',
+                              backgroundColor: textColor,
+                              opacity: 0.8,
+                              flexShrink: 0
+                            }} />
+                          )}
                           <h2 style={{
-                            fontSize: '1.28rem',
+                            fontSize: fontSize,
                             fontWeight: 700,
                             color: textColor,
                             margin: 0,
@@ -712,16 +727,6 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                             {item.title}
                           </h2>
                         </div>
-                        {item.description && (
-                          <div style={{
-                            fontSize: '0.88rem',
-                            opacity: 0.85,
-                            color: textColor,
-                            fontWeight: 500
-                          }}>
-                            {item.description}
-                          </div>
-                        )}
                       </div>
                     );
                   }

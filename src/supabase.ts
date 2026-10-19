@@ -54,15 +54,25 @@ export async function fetchProjectsFromSupabase(): Promise<PortfolioItem[] | nul
         let sectionBg = '#f3f4f6';
         let sectionColor = '#1f2937';
         let sectionBorder = '#e5e7eb';
+        let sectionShowBar = true;
+        let sectionFontSize = '1.28rem';
+        let sectionAlign: 'left' | 'center' | 'right' = 'left';
         let realCategory = row.category || 'PDF Document';
 
         if (row.category && row.category.startsWith('SECTION:::')) {
           const parts = row.category.split(':::');
-          // parts: ['SECTION', bg, color, border, optional category name]
+          // parts: ['SECTION', bg, color, border, showBar ('1'|'0'), fontSize, align, optional category name]
           sectionBg = parts[1] || sectionBg;
           sectionColor = parts[2] || sectionColor;
           sectionBorder = parts[3] || sectionBorder;
-          realCategory = parts[4] || 'Section';
+          if (parts.length > 5) {
+            sectionShowBar = parts[4] !== '0';
+            sectionFontSize = parts[5] || sectionFontSize;
+            sectionAlign = (parts[6] as 'left' | 'center' | 'right') || 'left';
+            realCategory = parts[7] || 'Section';
+          } else {
+            realCategory = parts[4] || 'Section';
+          }
         }
 
         return {
@@ -79,7 +89,10 @@ export async function fetchProjectsFromSupabase(): Promise<PortfolioItem[] | nul
           itemType: isSection ? 'section' : 'project',
           sectionBg: isSection ? sectionBg : undefined,
           sectionColor: isSection ? sectionColor : undefined,
-          sectionBorder: isSection ? sectionBorder : undefined
+          sectionBorder: isSection ? sectionBorder : undefined,
+          sectionShowBar: isSection ? sectionShowBar : undefined,
+          sectionFontSize: isSection ? sectionFontSize : undefined,
+          sectionAlign: isSection ? sectionAlign : undefined
         };
       });
     }
@@ -187,9 +200,15 @@ export async function createSectionInSupabase(params: {
   sectionBg: string;
   sectionColor: string;
   sectionBorder?: string;
+  sectionShowBar?: boolean;
+  sectionFontSize?: string;
+  sectionAlign?: 'left' | 'center' | 'right';
 }): Promise<{ success: boolean; item?: PortfolioItem; error?: string }> {
   const supabase = getSupabaseClient();
-  const encodedCategory = `SECTION:::${params.sectionBg}:::${params.sectionColor}:::${params.sectionBorder || '#e5e7eb'}:::Section`;
+  const showBarStr = params.sectionShowBar === false ? '0' : '1';
+  const fontSizeStr = params.sectionFontSize || '1.28rem';
+  const alignStr = params.sectionAlign || 'left';
+  const encodedCategory = `SECTION:::${params.sectionBg}:::${params.sectionColor}:::${params.sectionBorder || '#e5e7eb'}:::${showBarStr}:::${fontSizeStr}:::${alignStr}:::Section`;
   
   if (!supabase) {
     const fallbackItem: PortfolioItem = {
@@ -206,7 +225,10 @@ export async function createSectionInSupabase(params: {
       itemType: 'section',
       sectionBg: params.sectionBg,
       sectionColor: params.sectionColor,
-      sectionBorder: params.sectionBorder || '#e5e7eb'
+      sectionBorder: params.sectionBorder || '#e5e7eb',
+      sectionShowBar: params.sectionShowBar !== false,
+      sectionFontSize: fontSizeStr,
+      sectionAlign: (params.sectionAlign || 'left')
     };
     return { success: true, item: fallbackItem };
   }
@@ -243,7 +265,10 @@ export async function createSectionInSupabase(params: {
         itemType: 'section',
         sectionBg: params.sectionBg,
         sectionColor: params.sectionColor,
-        sectionBorder: params.sectionBorder || '#e5e7eb'
+        sectionBorder: params.sectionBorder || '#e5e7eb',
+        sectionShowBar: params.sectionShowBar !== false,
+        sectionFontSize: fontSizeStr,
+        sectionAlign: (params.sectionAlign || 'left')
       };
       return { success: true, item: fallbackItem };
     }
@@ -262,7 +287,10 @@ export async function createSectionInSupabase(params: {
       itemType: 'section',
       sectionBg: params.sectionBg,
       sectionColor: params.sectionColor,
-      sectionBorder: params.sectionBorder || '#e5e7eb'
+      sectionBorder: params.sectionBorder || '#e5e7eb',
+      sectionShowBar: params.sectionShowBar !== false,
+      sectionFontSize: fontSizeStr,
+      sectionAlign: (params.sectionAlign || 'left')
     };
 
     return { success: true, item: newItem };
@@ -354,6 +382,9 @@ export async function updateProjectInSupabase(params: {
     let sectionBg = '#f3f4f6';
     let sectionColor = '#1f2937';
     let sectionBorder = '#e5e7eb';
+    let sectionShowBar = true;
+    let sectionFontSize = '1.28rem';
+    let sectionAlign: 'left' | 'center' | 'right' = 'left';
     let realCategory = rowCategory;
 
     if (rowCategory.startsWith('SECTION:::')) {
@@ -361,7 +392,14 @@ export async function updateProjectInSupabase(params: {
       sectionBg = parts[1] || sectionBg;
       sectionColor = parts[2] || sectionColor;
       sectionBorder = parts[3] || sectionBorder;
-      realCategory = parts[4] || 'Section';
+      if (parts.length > 5) {
+        sectionShowBar = parts[4] !== '0';
+        sectionFontSize = parts[5] || sectionFontSize;
+        sectionAlign = (parts[6] as 'left' | 'center' | 'right') || 'left';
+        realCategory = parts[7] || 'Section';
+      } else {
+        realCategory = parts[4] || 'Section';
+      }
     }
 
     const updatedItem: PortfolioItem = {
@@ -378,7 +416,10 @@ export async function updateProjectInSupabase(params: {
       itemType: isSection ? 'section' : 'project',
       sectionBg: isSection ? sectionBg : undefined,
       sectionColor: isSection ? sectionColor : undefined,
-      sectionBorder: isSection ? sectionBorder : undefined
+      sectionBorder: isSection ? sectionBorder : undefined,
+      sectionShowBar: isSection ? sectionShowBar : undefined,
+      sectionFontSize: isSection ? sectionFontSize : undefined,
+      sectionAlign: isSection ? sectionAlign : undefined
     };
 
     return { success: true, item: updatedItem };

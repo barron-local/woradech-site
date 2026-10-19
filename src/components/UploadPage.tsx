@@ -61,6 +61,9 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   const [sectionBg, setSectionBg] = useState('#eff6ff');
   const [sectionColor, setSectionColor] = useState('#1e40af');
   const [sectionBorder, setSectionBorder] = useState('#bfdbfe');
+  const [sectionShowBar, setSectionShowBar] = useState(true);
+  const [sectionFontSize, setSectionFontSize] = useState('1.28rem');
+  const [sectionAlign, setSectionAlign] = useState<'left' | 'center' | 'right'>('left');
   const [isAddingSection, setIsAddingSection] = useState(false);
   const [sectionSuccess, setSectionSuccess] = useState(false);
   const [sectionError, setSectionError] = useState('');
@@ -72,6 +75,9 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   const [editSectionBg, setEditSectionBg] = useState('#f3f4f6');
   const [editSectionColor, setEditSectionColor] = useState('#1f2937');
   const [editSectionBorder, setEditSectionBorder] = useState('#e5e7eb');
+  const [editSectionShowBar, setEditSectionShowBar] = useState(true);
+  const [editSectionFontSize, setEditSectionFontSize] = useState('1.28rem');
+  const [editSectionAlign, setEditSectionAlign] = useState<'left' | 'center' | 'right'>('left');
   const [editNewFile, setEditNewFile] = useState<File | null>(null);
   const [editFileInfo, setEditFileInfo] = useState<{ name: string; size: string; isImage: boolean } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -192,7 +198,10 @@ export const UploadPage: React.FC<UploadPageProps> = ({
         title: sectionTitle.trim(),
         sectionBg,
         sectionColor,
-        sectionBorder
+        sectionBorder,
+        sectionShowBar,
+        sectionFontSize,
+        sectionAlign
       });
 
       if (res.success && res.item) {
@@ -216,6 +225,9 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     setEditSectionBg(item.sectionBg || '#f3f4f6');
     setEditSectionColor(item.sectionColor || '#1f2937');
     setEditSectionBorder(item.sectionBorder || '#e5e7eb');
+    setEditSectionShowBar(item.sectionShowBar !== false);
+    setEditSectionFontSize(item.sectionFontSize || '1.28rem');
+    setEditSectionAlign(item.sectionAlign || 'left');
     setEditNewFile(null);
     setEditFileInfo(null);
     setEditError('');
@@ -255,7 +267,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     try {
       // If editing a section
       if (editingItem.itemType === 'section') {
-        const encodedCategory = `SECTION:::${editSectionBg}:::${editSectionColor}:::${editSectionBorder}:::Section`;
+        const showBarStr = editSectionShowBar ? '1' : '0';
+        const encodedCategory = `SECTION:::${editSectionBg}:::${editSectionColor}:::${editSectionBorder}:::${showBarStr}:::${editSectionFontSize}:::${editSectionAlign}:::Section`;
         await updateProjectInSupabase({
           id: editingItem.id,
           title: editTitle.trim(),
@@ -270,6 +283,9 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           sectionBg: editSectionBg,
           sectionColor: editSectionColor,
           sectionBorder: editSectionBorder,
+          sectionShowBar: editSectionShowBar,
+          sectionFontSize: editSectionFontSize,
+          sectionAlign: editSectionAlign,
           tags: ['Section']
         };
         onUpdateProject(updatedItem);
@@ -659,6 +675,112 @@ export const UploadPage: React.FC<UploadPageProps> = ({
             </div>
           </div>
 
+          {/* Bar Toggle, Font Size, and Alignment Options */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '14px',
+            marginBottom: '22px',
+            padding: '14px',
+            backgroundColor: '#f9fafb',
+            borderRadius: '8px',
+            border: '1px solid var(--notion-border)'
+          }}>
+            {/* Toggle Bar */}
+            <div>
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--notion-text)', display: 'block', marginBottom: '8px' }}>
+                แถบขีดสีด้านหน้า (Color Bar):
+              </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setSectionShowBar(true)}
+                  style={{
+                    flex: 1,
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    border: `1.5px solid ${sectionShowBar ? '#2563eb' : 'var(--notion-border)'}`,
+                    backgroundColor: sectionShowBar ? '#eff6ff' : '#ffffff',
+                    color: sectionShowBar ? '#1e40af' : 'var(--notion-text)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✓ เปิดแถบ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSectionShowBar(false)}
+                  style={{
+                    flex: 1,
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    border: `1.5px solid ${!sectionShowBar ? '#2563eb' : 'var(--notion-border)'}`,
+                    backgroundColor: !sectionShowBar ? '#eff6ff' : '#ffffff',
+                    color: !sectionShowBar ? '#1e40af' : 'var(--notion-text)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✕ ซ่อนแถบ
+                </button>
+              </div>
+            </div>
+
+            {/* Font Size */}
+            <div>
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--notion-text)', display: 'block', marginBottom: '8px' }}>
+                ขนาดข้อความ (Font Size):
+              </label>
+              <select
+                value={sectionFontSize}
+                onChange={(e) => setSectionFontSize(e.target.value)}
+                className="notion-input"
+                style={{ fontSize: '0.85rem', padding: '6px 10px', width: '100%' }}
+              >
+                <option value="1.05rem">เล็ก (Small - 1.05rem)</option>
+                <option value="1.28rem">ปานกลาง (Medium - 1.28rem)</option>
+                <option value="1.5rem">ใหญ่ (Large - 1.5rem)</option>
+                <option value="1.8rem">ใหญ่พิเศษ (Extra Large - 1.8rem)</option>
+              </select>
+            </div>
+
+            {/* Align */}
+            <div>
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--notion-text)', display: 'block', marginBottom: '8px' }}>
+                จัดตำแหน่ง (Align):
+              </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {(['left', 'center', 'right'] as const).map((a) => {
+                  const isSelected = sectionAlign === a;
+                  const label = a === 'left' ? 'ซ้าย' : a === 'center' ? 'กึ่งกลาง' : 'ขวา';
+                  return (
+                    <button
+                      key={a}
+                      type="button"
+                      onClick={() => setSectionAlign(a)}
+                      style={{
+                        flex: 1,
+                        padding: '6px 8px',
+                        borderRadius: '6px',
+                        border: `1.5px solid ${isSelected ? '#2563eb' : 'var(--notion-border)'}`,
+                        backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
+                        color: isSelected ? '#1e40af' : 'var(--notion-text)',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
           {/* Live Preview Box */}
           <div style={{ marginBottom: '22px' }}>
             <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--notion-text-muted)', display: 'block', marginBottom: '6px' }}>
@@ -672,11 +794,15 @@ export const UploadPage: React.FC<UploadPageProps> = ({
               padding: '14px 20px',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: sectionAlign === 'center' ? 'center' : sectionAlign === 'right' ? 'flex-end' : 'flex-start',
+              textAlign: sectionAlign,
               gap: '10px',
               boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
             }}>
-              <div style={{ width: '6px', height: '20px', borderRadius: '3px', backgroundColor: sectionColor, opacity: 0.8 }} />
-              <span style={{ fontSize: '1.12rem', fontWeight: 700 }}>
+              {sectionShowBar && (
+                <div style={{ width: '6px', height: '22px', borderRadius: '3px', backgroundColor: sectionColor, opacity: 0.8, flexShrink: 0 }} />
+              )}
+              <span style={{ fontSize: sectionFontSize, fontWeight: 700 }}>
                 {sectionTitle.trim() || 'ตัวอย่างชื่อหน่วย (เช่น หน่วยที่ 1)'}
               </span>
             </div>
@@ -1375,6 +1501,112 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                     </div>
                   </div>
 
+                  {/* Bar Toggle, Font Size, and Alignment Options in Edit Modal */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                    gap: '12px',
+                    marginBottom: '18px',
+                    padding: '12px',
+                    backgroundColor: '#f9fafb',
+                    borderRadius: '8px',
+                    border: '1px solid var(--notion-border)'
+                  }}>
+                    {/* Toggle Bar */}
+                    <div>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--notion-text)', display: 'block', marginBottom: '6px' }}>
+                        แถบขีดสีด้านหน้า:
+                      </label>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setEditSectionShowBar(true)}
+                          style={{
+                            flex: 1,
+                            padding: '5px 8px',
+                            borderRadius: '4px',
+                            border: `1.5px solid ${editSectionShowBar ? '#2563eb' : 'var(--notion-border)'}`,
+                            backgroundColor: editSectionShowBar ? '#eff6ff' : '#ffffff',
+                            color: editSectionShowBar ? '#1e40af' : 'var(--notion-text)',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ✓ มีแถบ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditSectionShowBar(false)}
+                          style={{
+                            flex: 1,
+                            padding: '5px 8px',
+                            borderRadius: '4px',
+                            border: `1.5px solid ${!editSectionShowBar ? '#2563eb' : 'var(--notion-border)'}`,
+                            backgroundColor: !editSectionShowBar ? '#eff6ff' : '#ffffff',
+                            color: !editSectionShowBar ? '#1e40af' : 'var(--notion-text)',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ✕ ไม่มี
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Font Size */}
+                    <div>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--notion-text)', display: 'block', marginBottom: '6px' }}>
+                        ขนาดข้อความ:
+                      </label>
+                      <select
+                        value={editSectionFontSize}
+                        onChange={(e) => setEditSectionFontSize(e.target.value)}
+                        className="notion-input"
+                        style={{ fontSize: '0.82rem', padding: '5px 8px', width: '100%' }}
+                      >
+                        <option value="1.05rem">เล็ก (1.05rem)</option>
+                        <option value="1.28rem">ปานกลาง (1.28rem)</option>
+                        <option value="1.5rem">ใหญ่ (1.5rem)</option>
+                        <option value="1.8rem">ใหญ่พิเศษ (1.8rem)</option>
+                      </select>
+                    </div>
+
+                    {/* Align */}
+                    <div>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--notion-text)', display: 'block', marginBottom: '6px' }}>
+                        จัดตำแหน่ง:
+                      </label>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {(['left', 'center', 'right'] as const).map((a) => {
+                          const isSelected = editSectionAlign === a;
+                          const label = a === 'left' ? 'ซ้าย' : a === 'center' ? 'กลาง' : 'ขวา';
+                          return (
+                            <button
+                              key={a}
+                              type="button"
+                              onClick={() => setEditSectionAlign(a)}
+                              style={{
+                                flex: 1,
+                                padding: '5px 6px',
+                                borderRadius: '4px',
+                                border: `1.5px solid ${isSelected ? '#2563eb' : 'var(--notion-border)'}`,
+                                backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
+                                color: isSelected ? '#1e40af' : 'var(--notion-text)',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Live Preview */}
                   <div style={{ marginBottom: '18px' }}>
                     <div style={{
@@ -1385,10 +1617,14 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                       padding: '12px 16px',
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: editSectionAlign === 'center' ? 'center' : editSectionAlign === 'right' ? 'flex-end' : 'flex-start',
+                      textAlign: editSectionAlign,
                       gap: '8px'
                     }}>
-                      <div style={{ width: '6px', height: '18px', borderRadius: '3px', backgroundColor: editSectionColor, opacity: 0.8 }} />
-                      <span style={{ fontSize: '1.05rem', fontWeight: 700 }}>{editTitle || 'ชื่อหน่วย'}</span>
+                      {editSectionShowBar && (
+                        <div style={{ width: '6px', height: '18px', borderRadius: '3px', backgroundColor: editSectionColor, opacity: 0.8, flexShrink: 0 }} />
+                      )}
+                      <span style={{ fontSize: editSectionFontSize, fontWeight: 700 }}>{editTitle || 'ชื่อหน่วย'}</span>
                     </div>
                   </div>
                 </div>

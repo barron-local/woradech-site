@@ -22,6 +22,9 @@ export interface PortfolioItem {
   sectionBg?: string;
   sectionColor?: string;
   sectionBorder?: string;
+  sectionShowBar?: boolean;
+  sectionFontSize?: string;
+  sectionAlign?: 'left' | 'center' | 'right';
 }
 
 export interface EducationItem {
