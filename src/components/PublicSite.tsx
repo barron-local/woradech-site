@@ -145,41 +145,49 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
-      </header>
 
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div style={{
-          backgroundColor: '#fbfbfa',
-          borderBottom: '1px solid var(--notion-border)',
-          padding: '12px 24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '6px'
-        }}>
-          <button
-            onClick={() => handleNavClick('home')}
-            className="notion-btn notion-btn-subtle"
-            style={{ justifyContent: 'flex-start', fontWeight: currentPage === 'home' ? 600 : 400 }}
-          >
-            {config.navLinks.home}
-          </button>
-          <button
-            onClick={() => handleNavClick('about')}
-            className="notion-btn notion-btn-subtle"
-            style={{ justifyContent: 'flex-start', fontWeight: currentPage === 'about' ? 600 : 400 }}
-          >
-            {config.navLinks.about}
-          </button>
-          <button
-            onClick={() => handleNavClick('portfolio')}
-            className="notion-btn notion-btn-subtle"
-            style={{ justifyContent: 'flex-start', fontWeight: currentPage === 'portfolio' ? 600 : 400 }}
-          >
-            {config.navLinks.portfolio}
-          </button>
-        </div>
-      )}
+        {/* Mobile Drawer (Inside sticky header container with slide & blur) */}
+        {mobileMenuOpen && (
+          <div style={{
+            position: 'absolute',
+            top: '52px',
+            left: 0,
+            right: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            borderBottom: '1px solid var(--notion-border)',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08)',
+            padding: '12px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            zIndex: 100
+          }}>
+            <button
+              onClick={() => handleNavClick('home')}
+              className="notion-btn notion-btn-subtle"
+              style={{ justifyContent: 'flex-start', fontWeight: currentPage === 'home' ? 600 : 400 }}
+            >
+              {config.navLinks.home}
+            </button>
+            <button
+              onClick={() => handleNavClick('about')}
+              className="notion-btn notion-btn-subtle"
+              style={{ justifyContent: 'flex-start', fontWeight: currentPage === 'about' ? 600 : 400 }}
+            >
+              {config.navLinks.about}
+            </button>
+            <button
+              onClick={() => handleNavClick('portfolio')}
+              className="notion-btn notion-btn-subtle"
+              style={{ justifyContent: 'flex-start', fontWeight: currentPage === 'portfolio' ? 600 : 400 }}
+            >
+              {config.navLinks.portfolio}
+            </button>
+          </div>
+        )}
+      </header>
 
       {/* ================= PAGE ROUTING ================= */}
       <main style={{ flex: 1 }}>
