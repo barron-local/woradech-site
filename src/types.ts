@@ -98,7 +98,7 @@ export interface SiteConfig {
 }
 
 export const defaultSiteConfig: SiteConfig = {
-  siteTitle: "Woradech / Portfolio & Works",
+  siteTitle: "Woradech Site",
   logoText: "WORADECH",
   navLinks: {
     home: "Home",
@@ -149,7 +149,7 @@ export const defaultSiteConfig: SiteConfig = {
         institution: "วิทยาลัยเทคนิคนครศรีธรรมราช",
         institutionEn: "Nakhonsithammarat Technical College (วท.นศ.)",
         degree: "ประกาศนียบัตรวิชาชีพ (ปวช. 1 - ปวช. 3)",
-        major: "สาขา เทคโนโลยีสารสนเทศ",
+        major: "แผนกวิชาเทคโนโลยีสารสนเทศ",
         period: "2022 - 2025",
         description: "",
         logoUrl: "/logo-tnk.jpg",
@@ -160,7 +160,7 @@ export const defaultSiteConfig: SiteConfig = {
         institution: "วิทยาลัยเทคนิคนครศรีธรรมราช",
         institutionEn: "Nakhonsithammarat Technical College (วท.นศ.)",
         degree: "ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส. 1)",
-        major: "สาขา เทคโนโลยีสารสนเทศ",
+        major: "แผนกวิชาเทคโนโลยีสารสนเทศ",
         period: "2025 - ปัจจุบัน",
         description: "",
         logoUrl: "/logo-tnk.jpg",
@@ -247,6 +247,7 @@ export function loadSiteConfig(): SiteConfig {
       return { 
         ...defaultSiteConfig, 
         ...parsed,
+        siteTitle: (parsed.siteTitle && parsed.siteTitle !== "Woradech / Portfolio & Works" && parsed.siteTitle !== "Woradech / Portfolio") ? parsed.siteTitle : defaultSiteConfig.siteTitle,
         heroImage: {
           ...defaultSiteConfig.heroImage,
           ...(parsed.heroImage || {}),

@@ -200,8 +200,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    document.title = config.siteTitle || "Woradech / Portfolio";
-  }, [config]);
+    document.title = (config.siteTitle && config.siteTitle !== "Woradech / Portfolio & Works" && config.siteTitle !== "Woradech / Portfolio")
+      ? config.siteTitle
+      : "Woradech Site";
+  }, [config.siteTitle]);
 
   // Clean navigation without any # (e.g. /home, /about, /portfolio)
   const handleNavigate = (page: PageRoute) => {
