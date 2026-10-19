@@ -584,24 +584,6 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               <div id="about-education" className="search-scroll-target" style={{ marginTop: '64px', borderTop: '1px solid var(--notion-border)', paddingTop: '48px' }}>
                 {/* Section Header */}
                 <div style={{ marginBottom: '32px' }}>
-                  <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '4px 12px',
-                    borderRadius: '9999px',
-                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
-                    border: '1px solid rgba(37, 99, 235, 0.16)',
-                    color: '#2563eb',
-                    fontSize: '0.76rem',
-                    fontWeight: 600,
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    marginBottom: '10px'
-                  }}>
-                    <GraduationCap size={13} />
-                    <span>Academic Journey</span>
-                  </div>
                   <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0, letterSpacing: '-0.02em' }}>
                     ประวัติการศึกษา (Education)
                   </h2>
