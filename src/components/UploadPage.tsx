@@ -595,24 +595,6 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                       <GripVertical size={18} />
                     </div>
 
-                    {/* Numeric Order Badge */}
-                    <span style={{
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      color: 'var(--notion-text-muted)',
-                      backgroundColor: 'var(--notion-sidebar)',
-                      border: '1px solid var(--notion-border)',
-                      borderRadius: '6px',
-                      minWidth: '24px',
-                      height: '24px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '0 4px'
-                    }}>
-                      #{idx + 1}
-                    </span>
-
                     {/* Quick Move Up/Down Buttons */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <button
