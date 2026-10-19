@@ -437,7 +437,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
 
   return (
     <div ref={dropdownRef} style={{ position: 'relative' }}>
-      {/* 1. Desktop Search Trigger / Input Box */}
+      {/* 1. Desktop Search Trigger / Input Box (Capsule with Smooth Expand) */}
       <div
         onClick={() => {
           setIsOpen(true);
@@ -447,19 +447,19 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          backgroundColor: isOpen ? '#ffffff' : '#f4f4f5',
-          border: isOpen ? '1px solid #2563eb' : '1px solid #e4e4e7',
-          boxShadow: isOpen ? '0 0 0 2px rgba(37, 99, 235, 0.15)' : 'none',
-          borderRadius: '6px',
-          padding: '5px 10px',
-          width: '200px',
+          backgroundColor: isOpen ? '#ffffff' : 'rgba(0, 0, 0, 0.035)',
+          border: isOpen ? '1px solid #2563eb' : '1px solid rgba(0, 0, 0, 0.07)',
+          boxShadow: isOpen ? '0 0 0 3px rgba(37, 99, 235, 0.12), 0 2px 8px rgba(37, 99, 235, 0.06)' : 'none',
+          borderRadius: '9999px',
+          padding: '5px 12px',
+          width: isOpen ? '230px' : '170px',
           maxWidth: '100%',
-          transition: 'all 0.15s ease',
+          transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
           cursor: 'text'
         }}
         className="navbar-search-bar"
       >
-        <Search size={14} style={{ color: isOpen ? '#2563eb' : '#71717a', flexShrink: 0 }} />
+        <Search size={14} style={{ color: isOpen ? '#2563eb' : '#71717a', flexShrink: 0, transition: 'color 0.15s ease' }} />
         <input
           ref={inputRef}
           type="text"
@@ -470,7 +470,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="ค้นหา"
+          placeholder="ค้นหา..."
           style={{
             border: 'none',
             background: 'transparent',
@@ -516,13 +516,14 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           display: 'none',
           alignItems: 'center',
           justifyContent: 'center',
-          width: '32px',
-          height: '32px',
-          borderRadius: '6px',
-          border: '1px solid #e4e4e7',
-          backgroundColor: '#ffffff',
-          color: '#37352f',
-          cursor: 'pointer'
+          width: '36px',
+          height: '36px',
+          borderRadius: '8px',
+          border: '1px solid rgba(0, 0, 0, 0.06)',
+          backgroundColor: 'rgba(0, 0, 0, 0.035)',
+          color: 'var(--notion-text)',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease'
         }}
         aria-label="ค้นหา"
         title="ค้นหา"
@@ -535,22 +536,24 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
         <div
           style={{
             position: 'absolute',
-            top: 'calc(100% + 6px)',
+            top: 'calc(100% + 8px)',
             left: 0,
-            width: '380px',
-            maxWidth: '90vw',
-            backgroundColor: '#ffffff',
-            borderRadius: '8px',
-            border: '1px solid #e4e4e7',
-            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04)',
+            width: '390px',
+            maxWidth: '92vw',
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: '12px',
+            border: '1px solid rgba(0, 0, 0, 0.08)',
+            boxShadow: '0 16px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.04)',
             overflow: 'hidden',
             zIndex: 1000,
-            animation: 'fadeIn 0.12s ease'
+            animation: 'fadeIn 0.14s ease'
           }}
           className="search-suggestions-dropdown"
         >
           {/* List of Suggestions */}
-          <div style={{ maxHeight: '360px', overflowY: 'auto', padding: '4px 0' }}>
+          <div style={{ maxHeight: '360px', overflowY: 'auto', padding: '6px' }}>
             {searchResults.length > 0 ? (
               searchResults.map((item, idx) => {
                 const isSelected = idx === selectedIndex;
@@ -564,11 +567,12 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       gap: '12px',
-                      padding: '8px 14px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
                       cursor: 'pointer',
-                      backgroundColor: isSelected ? '#f4f4f5' : 'transparent',
+                      backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.08)' : 'transparent',
                       borderLeft: isSelected ? '3px solid #2563eb' : '3px solid transparent',
-                      transition: 'background-color 0.1s ease'
+                      transition: 'all 0.12s ease'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>

@@ -72,40 +72,99 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#ffffff', color: '#37352f', display: 'flex', flexDirection: 'column' }}>
 
-      {/* 1. NAVIGATION BAR (No Contact link, No Emoji) */}
-      <header style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        backgroundColor: 'rgba(255, 255, 255, 0.98)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid var(--notion-border)',
-        height: '52px',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 24px'
-      }}>
-        <div style={{ maxWidth: '1080px', margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* 1. NAVIGATION BAR (Refined Minimalist Deluxe) */}
+      <header
+        className="navbar-header"
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          backdropFilter: 'blur(16px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 16px rgba(0, 0, 0, 0.02)',
+          height: '56px',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 24px',
+          transition: 'all 0.2s ease'
+        }}
+      >
+        <div style={{ maxWidth: '1080px', margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
 
-          {/* Logo and Name */}
+          {/* Logo and Name with Emerald Live Pulse */}
           <div
             onClick={() => handleNavClick('home')}
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              cursor: 'pointer',
+              userSelect: 'none',
+              flexShrink: 0
+            }}
           >
-            <img
-              src="/logo-tnk.jpg"
-              alt="Logo"
-              style={{
-                height: '34px',
-                width: 'auto',
-                display: 'block',
-                borderRadius: 'var(--radius-xs)',
-                objectFit: 'contain'
-              }}
-            />
-            <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--notion-text)', letterSpacing: '-0.01em' }}>
-              014 Woradech Panphuech
-            </span>
+            <div style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px',
+              padding: '2px',
+              backgroundColor: '#ffffff',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+              border: '1px solid rgba(0, 0, 0, 0.08)',
+              transition: 'transform 0.2s ease'
+            }}>
+              <img
+                src="/logo-tnk.jpg"
+                alt="Logo"
+                style={{
+                  height: '28px',
+                  width: '28px',
+                  borderRadius: '6px',
+                  objectFit: 'cover',
+                  display: 'block'
+                }}
+              />
+              {/* Subtle Live Status Dot */}
+              <span
+                style={{
+                  position: 'absolute',
+                  bottom: '-2px',
+                  right: '-2px',
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  border: '1.5px solid #ffffff',
+                  boxShadow: '0 0 4px rgba(16, 185, 129, 0.5)'
+                }}
+                title="Online / Ready"
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{
+                fontSize: '0.92rem',
+                fontWeight: 600,
+                color: 'var(--notion-text)',
+                letterSpacing: '-0.015em',
+                lineHeight: 1.2
+              }}>
+                014 Woradech Panphuech
+              </span>
+              <span style={{
+                fontSize: '0.68rem',
+                fontWeight: 500,
+                color: 'var(--notion-text-muted)',
+                letterSpacing: '0.02em',
+                textTransform: 'uppercase'
+              }}>
+                Portfolio & Works
+              </span>
+            </div>
           </div>
 
           {/* Right Group: Search Bar + Nav Links + Mobile Toggle */}
@@ -119,43 +178,66 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               }}
             />
 
-            {/* Desktop Nav Items: Only Home, About, Portfolio */}
-            <nav className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* Desktop Nav Items: Sliding Pill Container */}
+            <nav
+              className="desktop-nav"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2px',
+                backgroundColor: 'rgba(0, 0, 0, 0.035)',
+                padding: '3px',
+                borderRadius: '10px',
+                border: '1px solid rgba(0, 0, 0, 0.04)'
+              }}
+            >
               <button
                 onClick={() => handleNavClick('home')}
-                className="notion-btn notion-btn-subtle"
                 style={{
-                  fontSize: '0.85rem',
-                  padding: '6px 12px',
-                  fontWeight: currentPage === 'home' ? 600 : 400,
+                  fontSize: '0.84rem',
+                  padding: '5px 14px',
+                  borderRadius: '7px',
+                  fontWeight: currentPage === 'home' ? 600 : 500,
                   color: currentPage === 'home' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                  backgroundColor: currentPage === 'home' ? 'var(--notion-hover)' : 'transparent'
+                  backgroundColor: currentPage === 'home' ? '#ffffff' : 'transparent',
+                  boxShadow: currentPage === 'home' ? '0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.03)' : 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
                 }}
               >
                 {config.navLinks.home}
               </button>
               <button
                 onClick={() => handleNavClick('about')}
-                className="notion-btn notion-btn-subtle"
                 style={{
-                  fontSize: '0.85rem',
-                  padding: '6px 12px',
-                  fontWeight: currentPage === 'about' ? 600 : 400,
+                  fontSize: '0.84rem',
+                  padding: '5px 14px',
+                  borderRadius: '7px',
+                  fontWeight: currentPage === 'about' ? 600 : 500,
                   color: currentPage === 'about' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                  backgroundColor: currentPage === 'about' ? 'var(--notion-hover)' : 'transparent'
+                  backgroundColor: currentPage === 'about' ? '#ffffff' : 'transparent',
+                  boxShadow: currentPage === 'about' ? '0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.03)' : 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
                 }}
               >
                 {config.navLinks.about}
               </button>
               <button
                 onClick={() => handleNavClick('portfolio')}
-                className="notion-btn notion-btn-subtle"
                 style={{
-                  fontSize: '0.85rem',
-                  padding: '6px 12px',
-                  fontWeight: currentPage === 'portfolio' ? 600 : 400,
+                  fontSize: '0.84rem',
+                  padding: '5px 14px',
+                  borderRadius: '7px',
+                  fontWeight: currentPage === 'portfolio' ? 600 : 500,
                   color: currentPage === 'portfolio' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                  backgroundColor: currentPage === 'portfolio' ? 'var(--notion-hover)' : 'transparent'
+                  backgroundColor: currentPage === 'portfolio' ? '#ffffff' : 'transparent',
+                  boxShadow: currentPage === 'portfolio' ? '0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.03)' : 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
                 }}
               >
                 {config.navLinks.portfolio}
@@ -167,15 +249,21 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="mobile-toggle"
               style={{
-                background: 'transparent',
-                border: 'none',
+                background: 'rgba(0, 0, 0, 0.035)',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                padding: '4px',
-                color: 'var(--notion-text)'
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--notion-text)',
+                transition: 'all 0.15s ease'
               }}
               aria-label="Toggle Menu"
             >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
         </div>
@@ -184,38 +272,72 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
         {mobileMenuOpen && (
           <div style={{
             position: 'absolute',
-            top: '52px',
+            top: '56px',
             left: 0,
             right: 0,
-            backgroundColor: 'rgba(255, 255, 255, 0.98)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            borderBottom: '1px solid var(--notion-border)',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08)',
-            padding: '12px 24px',
+            backgroundColor: 'rgba(255, 255, 255, 0.96)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.1)',
+            padding: '12px 20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '6px',
-            zIndex: 100
+            zIndex: 100,
+            animation: 'fadeIn 0.15s ease'
           }}>
             <button
               onClick={() => handleNavClick('home')}
-              className="notion-btn notion-btn-subtle"
-              style={{ justifyContent: 'flex-start', fontWeight: currentPage === 'home' ? 600 : 400 }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: currentPage === 'home' ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
+                fontWeight: currentPage === 'home' ? 600 : 500,
+                color: currentPage === 'home' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
             >
               {config.navLinks.home}
             </button>
             <button
               onClick={() => handleNavClick('about')}
-              className="notion-btn notion-btn-subtle"
-              style={{ justifyContent: 'flex-start', fontWeight: currentPage === 'about' ? 600 : 400 }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: currentPage === 'about' ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
+                fontWeight: currentPage === 'about' ? 600 : 500,
+                color: currentPage === 'about' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
             >
               {config.navLinks.about}
             </button>
             <button
               onClick={() => handleNavClick('portfolio')}
-              className="notion-btn notion-btn-subtle"
-              style={{ justifyContent: 'flex-start', fontWeight: currentPage === 'portfolio' ? 600 : 400 }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: currentPage === 'portfolio' ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
+                fontWeight: currentPage === 'portfolio' ? 600 : 500,
+                color: currentPage === 'portfolio' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
             >
               {config.navLinks.portfolio}
             </button>
