@@ -171,11 +171,14 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           });
         } else {
           // Regular Portfolio Item
+          const isGenericType = !item.category || /^(pdf|image|pdf document|image document|document)$/i.test(item.category.trim());
+          const cleanBadge = isGenericType ? 'ผลงาน' : item.category;
+
           items.push({
             id: `work-${item.id}`,
             title: item.title,
-            subtitle: `${currentUnitName}${item.category ? ` • ${item.category}` : ''}`,
-            badge: item.category || 'ผลงาน',
+            subtitle: currentUnitName,
+            badge: cleanBadge,
             badgeColor: { bg: '#eff6ff', text: '#1d4ed8', border: '#dbeafe' },
             categoryType: 'work',
             targetPage: 'portfolio',
