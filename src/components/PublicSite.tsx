@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
 import { PdfDocViewer } from './PdfDocViewer';
+import { NavbarSearch } from './NavbarSearch';
 
 export type PageRoute = 'home' | 'about' | 'portfolio' | '404';
 
@@ -89,7 +90,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
           {/* Logo and Name */}
           <div
             onClick={() => handleNavClick('home')}
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
           >
             <img
               src="/logo-tnk.jpg"
@@ -107,65 +108,76 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             </span>
           </div>
 
-          {/* Desktop Nav Items: Only Home, About, Portfolio */}
-          <nav className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <button
-              onClick={() => handleNavClick('home')}
-              className="notion-btn notion-btn-subtle"
-              style={{
-                fontSize: '0.85rem',
-                padding: '6px 12px',
-                fontWeight: currentPage === 'home' ? 600 : 400,
-                color: currentPage === 'home' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                backgroundColor: currentPage === 'home' ? 'var(--notion-hover)' : 'transparent'
+          {/* Right Group: Search Bar + Nav Links + Mobile Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <NavbarSearch
+              config={config}
+              currentPage={currentPage}
+              onNavigate={(page) => {
+                onNavigate(page);
+                setMobileMenuOpen(false);
               }}
-            >
-              {config.navLinks.home}
-            </button>
-            <button
-              onClick={() => handleNavClick('about')}
-              className="notion-btn notion-btn-subtle"
-              style={{
-                fontSize: '0.85rem',
-                padding: '6px 12px',
-                fontWeight: currentPage === 'about' ? 600 : 400,
-                color: currentPage === 'about' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                backgroundColor: currentPage === 'about' ? 'var(--notion-hover)' : 'transparent'
-              }}
-            >
-              {config.navLinks.about}
-            </button>
-            <button
-              onClick={() => handleNavClick('portfolio')}
-              className="notion-btn notion-btn-subtle"
-              style={{
-                fontSize: '0.85rem',
-                padding: '6px 12px',
-                fontWeight: currentPage === 'portfolio' ? 600 : 400,
-                color: currentPage === 'portfolio' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                backgroundColor: currentPage === 'portfolio' ? 'var(--notion-hover)' : 'transparent'
-              }}
-            >
-              {config.navLinks.portfolio}
-            </button>
-          </nav>
+            />
 
-          {/* Mobile Toggle */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="mobile-toggle"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px',
-              display: 'none',
-              color: 'var(--notion-text)'
-            }}
-            aria-label="Toggle Menu"
-          >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+            {/* Desktop Nav Items: Only Home, About, Portfolio */}
+            <nav className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                onClick={() => handleNavClick('home')}
+                className="notion-btn notion-btn-subtle"
+                style={{
+                  fontSize: '0.85rem',
+                  padding: '6px 12px',
+                  fontWeight: currentPage === 'home' ? 600 : 400,
+                  color: currentPage === 'home' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
+                  backgroundColor: currentPage === 'home' ? 'var(--notion-hover)' : 'transparent'
+                }}
+              >
+                {config.navLinks.home}
+              </button>
+              <button
+                onClick={() => handleNavClick('about')}
+                className="notion-btn notion-btn-subtle"
+                style={{
+                  fontSize: '0.85rem',
+                  padding: '6px 12px',
+                  fontWeight: currentPage === 'about' ? 600 : 400,
+                  color: currentPage === 'about' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
+                  backgroundColor: currentPage === 'about' ? 'var(--notion-hover)' : 'transparent'
+                }}
+              >
+                {config.navLinks.about}
+              </button>
+              <button
+                onClick={() => handleNavClick('portfolio')}
+                className="notion-btn notion-btn-subtle"
+                style={{
+                  fontSize: '0.85rem',
+                  padding: '6px 12px',
+                  fontWeight: currentPage === 'portfolio' ? 600 : 400,
+                  color: currentPage === 'portfolio' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
+                  backgroundColor: currentPage === 'portfolio' ? 'var(--notion-hover)' : 'transparent'
+                }}
+              >
+                {config.navLinks.portfolio}
+              </button>
+            </nav>
+
+            {/* Mobile Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="mobile-toggle"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                color: 'var(--notion-text)'
+              }}
+              aria-label="Toggle Menu"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Drawer (Inside sticky header container with slide & blur) */}
@@ -220,7 +232,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
           <div>
             {/* 2. HERO SECTION: Full-width Edge-to-Edge and Full Screen */}
             <section
-              className="hero-section"
+              id="home-hero"
+              className="hero-section search-scroll-target"
               style={{
                 width: '100%',
                 height: 'calc(100vh - 52px)',
@@ -295,7 +308,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             }} className="about-grid">
 
               {/* Profile Card */}
-              <div className="notion-card" style={{ padding: '24px', textAlign: 'center', position: 'sticky', top: '70px' }}>
+              <div id="about-profile" className="notion-card search-scroll-target" style={{ padding: '24px', textAlign: 'center', position: 'sticky', top: '70px' }}>
                 <div style={{ width: '100%', height: '280px', borderRadius: 'var(--radius-xs)', overflow: 'hidden', marginBottom: '16px', border: '1px solid var(--notion-border)' }}>
                   <img
                     src={config.about.avatarUrl || "/me.jpeg"}
@@ -315,7 +328,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
                 
                 {/* 1. ประวัติส่วนตัว */}
-                <div className="notion-card" style={{ padding: '28px' }}>
+                <div id="about-bio" className="notion-card search-scroll-target" style={{ padding: '28px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--notion-border)', paddingBottom: '12px' }}>
                     <div style={{
                       width: '32px',
@@ -399,7 +412,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                 </div>
 
                 {/* 2. ข้อมูลผู้ปกครอง */}
-                <div className="notion-card" style={{ padding: '28px' }}>
+                <div id="about-parents" className="notion-card search-scroll-target" style={{ padding: '28px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--notion-border)', paddingBottom: '12px' }}>
                     <div style={{
                       width: '32px',
@@ -472,7 +485,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
             {/* Section แสดงประวัติการศึกษา (Education Timeline) */}
             {config.about.education && config.about.education.length > 0 && (
-              <div style={{ marginTop: '64px', borderTop: '1px solid var(--notion-border)', paddingTop: '48px' }}>
+              <div id="about-education" className="search-scroll-target" style={{ marginTop: '64px', borderTop: '1px solid var(--notion-border)', paddingTop: '48px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px' }}>
                   <div style={{
                     width: '32px',
@@ -506,7 +519,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                     {config.about.education.map((edu, idx) => (
-                      <div key={edu.id || idx} style={{ position: 'relative' }}>
+                      <div key={edu.id || idx} id={`edu-${edu.id || idx}`} className="search-scroll-target" style={{ position: 'relative' }}>
                         {/* Timeline Node Dot */}
                         <div style={{
                           position: 'absolute',
@@ -627,7 +640,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
         {/* ----------------- PAGE 3: PORTFOLIO (แยกหน้า) ----------------- */}
         {currentPage === 'portfolio' && (
-          <section style={{ maxWidth: '1080px', margin: '0 auto', padding: '48px 24px 80px' }}>
+          <section id="portfolio-root" className="search-scroll-target" style={{ maxWidth: '1080px', margin: '0 auto', padding: '48px 24px 80px' }}>
             <div style={{ marginBottom: '32px' }}>
               <h1 style={{ fontSize: '2.4rem', fontWeight: 700, color: 'var(--notion-text)' }}>
                 {config.portfolio.title}
@@ -724,6 +737,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                     return (
                       <div
                         key={section ? section.id : `group-${groupIdx}`}
+                        id={section ? `section-${section.id}` : undefined}
+                        className={section ? "search-scroll-target" : undefined}
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
@@ -784,7 +799,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                             {group.items.map((item) => (
                               <div
                                 key={item.id}
-                                className="notion-card"
+                                id={`portfolio-item-${item.id}`}
+                                className="notion-card search-scroll-target"
                                 style={{
                                   display: 'flex',
                                   flexDirection: 'column',

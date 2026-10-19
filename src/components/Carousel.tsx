@@ -40,7 +40,7 @@ export const Carousel: React.FC<CarouselProps> = ({
   const current = slides[currentIndex];
 
   return (
-    <section style={{ maxWidth: '1080px', margin: '48px auto', padding: '0 24px' }}>
+    <section id="home-carousel" className="search-scroll-target" style={{ maxWidth: '1080px', margin: '48px auto', padding: '0 24px' }}>
       {title && (
         <div style={{ marginBottom: '20px' }}>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--notion-text)', marginBottom: '4px' }}>
