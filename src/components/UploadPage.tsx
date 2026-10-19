@@ -305,22 +305,36 @@ export const UploadPage: React.FC<UploadPageProps> = ({
       let updatedFileName = editingItem.fileName;
 
       if (editNewFile) {
+        const ext = (editNewFile.name.split('.').pop() || '').toLowerCase();
+        const isImage = editNewFile.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext);
+        
+        let fileDataUrl = '';
         try {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const finalPdfUrl = (reader.result as string) || updatedPdfUrl;
-            const updatedItem: PortfolioItem = {
-              ...editingItem,
-              title: editTitle.trim(),
-              description: editDescription.trim(),
-              pdfUrl: res.item?.pdfUrl || finalPdfUrl,
-              fileName: editNewFile.name,
-              link: res.item?.link || finalPdfUrl
-            };
-            onUpdateProject(updatedItem);
-          };
-          reader.readAsDataURL(editNewFile);
+          fileDataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(editNewFile);
+          });
         } catch {}
+
+        const finalUrl = res.item?.pdfUrl || fileDataUrl || updatedPdfUrl;
+        const finalImage = isImage
+          ? (res.item?.imageUrl || fileDataUrl || editingItem.imageUrl)
+          : (res.item?.imageUrl || editingItem.imageUrl || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80");
+
+        const updatedItem: PortfolioItem = {
+          ...editingItem,
+          title: editTitle.trim(),
+          description: editDescription.trim(),
+          category: isImage ? 'Image' : 'PDF Document',
+          imageUrl: finalImage,
+          pdfUrl: finalUrl,
+          fileName: editNewFile.name,
+          link: finalUrl,
+          tags: [isImage ? 'Image' : 'PDF']
+        };
+        onUpdateProject(updatedItem);
       } else {
         const updatedItem: PortfolioItem = {
           ...editingItem,
