@@ -16,8 +16,7 @@ import {
   Loader2,
   Clock,
   Image as ImageIcon,
-  AlertCircle,
-  X
+  AlertCircle
 } from 'lucide-react';
 import { compressImage } from '../utils/imageCompress';
 import { uploadAssetToSupabase } from '../supabase';
@@ -829,89 +828,6 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
         )}
 
       </main>
-
-      {/* Global Floating Toast Alert (แจ้งเตือนลอยเห็นชัดเจนทุกที่) */}
-      {(saveSuccess || saveError) && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            zIndex: 99999,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '14px 18px',
-            borderRadius: '12px',
-            backgroundColor: '#ffffff',
-            border: saveSuccess ? '1.5px solid #86efac' : '1.5px solid #fca5a5',
-            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.06)',
-            color: 'var(--notion-text)',
-            minWidth: '320px',
-            maxWidth: '440px',
-            animation: 'fadeIn 0.2s ease'
-          }}
-        >
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            backgroundColor: saveSuccess ? '#f0fdf4' : '#fef2f2',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            {saveSuccess ? (
-              <CheckCircle2 size={22} color="#16a34a" />
-            ) : (
-              <AlertCircle size={22} color="#dc2626" />
-            )}
-          </div>
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: '0.92rem',
-              fontWeight: 700,
-              color: saveSuccess ? '#15803d' : '#b91c1c',
-              marginBottom: '2px'
-            }}>
-              {saveSuccess ? 'บันทึกข้อมูลสำเร็จเรียบร้อย!' : 'เกิดข้อผิดพลาดในการบันทึก'}
-            </div>
-            <div style={{
-              fontSize: '0.82rem',
-              color: 'var(--notion-text-muted)',
-              lineHeight: 1.4
-            }}>
-              {saveSuccess
-                ? 'บันทึกทั้ง 1. แบนเนอร์หน้าแรก (Hero Banner) และ 2. รูปภาพสไลด์ (Carousel Slides) เรียบร้อยแล้ว'
-                : (saveError || 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง')}
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              setSaveSuccess(false);
-              setSaveError(null);
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--notion-text-muted)',
-              padding: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '6px'
-            }}
-            title="ปิดการแจ้งเตือน"
-            aria-label="Close"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
     </div>
   );
 };
