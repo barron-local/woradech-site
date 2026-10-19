@@ -4,7 +4,7 @@ import { loadSiteConfig, saveSiteConfig } from './types';
 import { PublicSite, type PageRoute } from './components/PublicSite';
 import { SiteEditor } from './components/SiteEditor';
 import { AdminPinModal } from './components/AdminPinModal';
-import { fetchProjectsFromSupabase, syncProjectOrderToSupabase, getSupabaseClient } from './supabase';
+import { fetchProjectsFromSupabase, syncProjectOrderToSupabase } from './supabase';
 
 export default function App() {
   const [config, setConfig] = useState<SiteConfig>(() => loadSiteConfig());
@@ -84,32 +84,13 @@ export default function App() {
     };
     window.addEventListener('storage', handleStorageChange);
 
-    // 3. Supabase Realtime subscription for instant cloud updates
-    const supabase = getSupabaseClient();
-    let channel: any = null;
-    if (supabase) {
-      try {
-        channel = supabase
-          .channel('public:projects')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
-            pollProjects();
-          })
-          .subscribe();
-      } catch (err) {
-        // Realtime subscription fallback
-      }
-    }
-
-    // 4. Polling heartbeat every 2000ms (balanced to avoid QUIC timeouts while staying responsive)
-    const interval = setInterval(pollProjects, 2000);
+    // 3. Polling heartbeat every 3000ms (avoids connection exhaustion and ERR_QUIC_PROTOCOL_ERROR)
+    const interval = setInterval(pollProjects, 3000);
 
     return () => {
       isMounted = false;
       clearInterval(interval);
       window.removeEventListener('storage', handleStorageChange);
-      if (channel && supabase) {
-        supabase.removeChannel(channel);
-      }
     };
   }, []);
 

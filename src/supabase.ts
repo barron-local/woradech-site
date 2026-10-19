@@ -33,36 +33,18 @@ export interface SupabaseProjectRow {
 }
 
 // Safe select columns (avoid selecting massive multi-megabyte base64 strings if not needed)
-// If row contains stored URL in storage, it's small.
+// Never select pdf_url in bulk poll because historical rows have megabytes of base64
 export async function fetchProjectsFromSupabase(): Promise<PortfolioItem[] | null> {
   const supabase = getSupabaseClient();
   if (!supabase) return null;
 
   try {
-    // Wrap supabase request in a timeout (5 seconds) so it never hangs or locks
-    const fetchPromise = supabase
+    const { data, error } = await supabase
       .from('projects')
-      .select('id, title, category, description, file_name, pdf_url, image_url, created_at')
+      .select('id, title, category, description, file_name, created_at')
       .order('created_at', { ascending: true });
 
-    const timeoutPromise = new Promise<{ data: null; error: any }>((_, reject) =>
-      setTimeout(() => reject(new Error('Supabase request timeout')), 5000)
-    );
-
-    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
-
     if (error) {
-      // If error is statement timeout, try fallback to minimal columns without pdf_url
-      if (error.code === '57014' || error.message?.includes('timeout')) {
-        const fallbackRes = await supabase
-          .from('projects')
-          .select('id, title, category, description, file_name, created_at')
-          .order('created_at', { ascending: true });
-
-        if (fallbackRes.data) {
-          return fallbackRes.data.map((row: SupabaseProjectRow) => parseProjectRow(row));
-        }
-      }
       return null;
     }
 
@@ -74,6 +56,7 @@ export async function fetchProjectsFromSupabase(): Promise<PortfolioItem[] | nul
   }
   return null;
 }
+
 
 function parseProjectRow(row: SupabaseProjectRow): PortfolioItem {
   const isSection = (row.category || '').startsWith('SECTION:::') || row.category === 'Section';
@@ -480,17 +463,20 @@ export async function syncProjectOrderToSupabase(reorderedProjects: PortfolioIte
   if (!supabase || !reorderedProjects || reorderedProjects.length === 0) return;
 
   try {
+    // Only sync items that have real UUIDs in Supabase (skip client fallback ids like 'section-123', 'file-123')
+    const validProjects = reorderedProjects.filter(p => p.id && !p.id.startsWith('section-') && !p.id.startsWith('file-') && !p.id.startsWith('img-') && !p.id.startsWith('pdf-') && !p.id.startsWith('p-'));
+    if (validProjects.length === 0) return;
+
     // Generate timestamps with 10-second intervals so order is preserved
-    const baseTime = Date.now() - (reorderedProjects.length * 60 * 1000);
-    const updates = reorderedProjects.map((project, index) => {
+    const baseTime = Date.now() - (validProjects.length * 60 * 1000);
+    for (let index = 0; index < validProjects.length; index++) {
+      const project = validProjects[index];
       const newTimestamp = new Date(baseTime + (index * 10 * 1000)).toISOString();
-      return supabase
+      await supabase
         .from('projects')
         .update({ created_at: newTimestamp })
         .eq('id', project.id);
-    });
-
-    await Promise.allSettled(updates);
+    }
   } catch (err) {
     console.warn('Failed to sync project order to Supabase:', err);
   }
