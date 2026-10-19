@@ -19,6 +19,7 @@ import {
   Home,
   ArrowUpRight
 } from 'lucide-react';
+import { PdfCardThumbnail } from './PdfCardThumbnail';
 
 export type PageRoute = 'home' | 'about' | 'portfolio' | '404';
 
@@ -803,18 +804,10 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                                   }}
                                   title="คลิกเพื่อเปิดดูรูปภาพ / เอกสาร"
                                 >
-                                  <img
-                                    src={item.imageUrl}
-                                    alt={item.title}
-                                    style={{
-                                      width: '100%',
-                                      height: '100%',
-                                      objectFit: 'cover',
-                                      transition: 'transform 0.2s ease'
-                                    }}
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80";
-                                    }}
+                                  <PdfCardThumbnail
+                                    imageUrl={item.imageUrl}
+                                    pdfUrl={item.pdfUrl || item.link}
+                                    title={item.title}
                                   />
                                 </div>
 

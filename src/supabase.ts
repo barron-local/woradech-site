@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { PortfolioItem } from './types';
+import { renderPdfFirstPageToImage, dataUrlToBlob } from './utils/pdfThumbnail';
 
 // Read all credentials directly from environment variables (.env)
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://srpytprcobmufxqrkzio.supabase.co';
@@ -141,16 +142,49 @@ export async function uploadProjectToSupabase(params: {
       publicFileUrl = urlData.publicUrl;
     }
 
-    const defaultCover = isImage
+    let coverImageUrl = isImage ? publicFileUrl : '';
+
+    // If PDF, render the first page as thumbnail image
+    if (!isImage) {
+      try {
+        const thumbDataUrl = await renderPdfFirstPageToImage(params.file);
+        if (thumbDataUrl) {
+          const thumbBlob = dataUrlToBlob(thumbDataUrl);
+          if (thumbBlob) {
+            const thumbFileName = `${Date.now()}_thumb_${Math.random().toString(36).substring(2, 8)}.jpg`;
+            const thumbPath = `documents/${thumbFileName}`;
+            const { error: thumbErr } = await supabase.storage
+              .from('portfolio-docs')
+              .upload(thumbPath, thumbBlob, {
+                contentType: 'image/jpeg',
+                upsert: true
+              });
+            if (!thumbErr) {
+              const { data: thumbUrlData } = supabase.storage
+                .from('portfolio-docs')
+                .getPublicUrl(thumbPath);
+              coverImageUrl = thumbUrlData.publicUrl;
+            } else {
+              coverImageUrl = thumbDataUrl;
+            }
+          }
+        }
+      } catch (thumbError) {
+        console.warn('PDF thumbnail generation note:', thumbError);
+      }
+    }
+
+    const defaultCover = coverImageUrl || (isImage
       ? publicFileUrl
-      : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
+      : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80");
 
     const itemCategory = params.category || (isImage ? 'Image' : 'PDF Document');
 
     // Never insert megabytes of base64 directly into PostgreSQL row because it causes PostgREST statement timeout (57014)
     const isDataUrl = publicFileUrl.startsWith('data:');
     const safeDbUrl = isDataUrl ? '' : publicFileUrl;
-    const safeCoverUrl = (isImage && !isDataUrl) ? publicFileUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
+    const isCoverDataUrl = coverImageUrl.startsWith('data:');
+    const safeCoverUrl = isCoverDataUrl ? '' : (coverImageUrl || defaultCover);
 
     const { data: inserted, error: insertError } = await supabase
       .from('projects')
@@ -359,6 +393,32 @@ export async function updateProjectInSupabase(params: {
         if (isImage) {
           updatePayload.image_url = urlData.publicUrl;
           updatePayload.category = 'Image';
+        } else {
+          // Render PDF first page thumbnail and upload
+          try {
+            const thumbDataUrl = await renderPdfFirstPageToImage(params.newFile);
+            if (thumbDataUrl) {
+              const thumbBlob = dataUrlToBlob(thumbDataUrl);
+              if (thumbBlob) {
+                const thumbFileName = `${Date.now()}_thumb_${Math.random().toString(36).substring(2, 8)}.jpg`;
+                const thumbPath = `documents/${thumbFileName}`;
+                const { error: thumbErr } = await supabase.storage
+                  .from('portfolio-docs')
+                  .upload(thumbPath, thumbBlob, {
+                    contentType: 'image/jpeg',
+                    upsert: true
+                  });
+                if (!thumbErr) {
+                  const { data: thumbUrlData } = supabase.storage
+                    .from('portfolio-docs')
+                    .getPublicUrl(thumbPath);
+                  updatePayload.image_url = thumbUrlData.publicUrl;
+                }
+              }
+            }
+          } catch (tErr) {
+            console.warn('Edit PDF thumbnail generation note:', tErr);
+          }
         }
       } else {
         // Do not upload massive base64 to postgres database

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import type { PortfolioItem } from '../types';
 import { UploadCloud, FileText, CheckCircle2, Edit2, Trash2, ExternalLink, X, Save, AlertCircle, Image as ImageIcon, GripVertical, ChevronUp, ChevronDown, Bookmark, Palette } from 'lucide-react';
 import { uploadProjectToSupabase, updateProjectInSupabase, deleteProjectFromSupabase, createSectionInSupabase } from '../supabase';
+import { renderPdfFirstPageToImage } from '../utils/pdfThumbnail';
+import { PdfCardThumbnail } from './PdfCardThumbnail';
 
 interface UploadPageProps {
   projects: PortfolioItem[];
@@ -153,14 +155,21 @@ export const UploadPage: React.FC<UploadPageProps> = ({
       } else {
         // Fallback to local
         const reader = new FileReader();
-        reader.onload = () => {
+        reader.onload = async () => {
           const fileUrl = reader.result as string;
+          let generatedCover = isImage ? fileUrl : '';
+          if (!isImage) {
+            try {
+              const thumb = await renderPdfFirstPageToImage(rawFile);
+              if (thumb) generatedCover = thumb;
+            } catch {}
+          }
           const fallbackItem: PortfolioItem = {
             id: (isImage ? 'img-' : 'pdf-') + Date.now(),
             title: title.trim(),
             category: isImage ? 'Image' : 'PDF Document',
             description: description.trim() || `ไฟล์ ${rawFile.name}`,
-            imageUrl: isImage ? fileUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+            imageUrl: generatedCover || (isImage ? fileUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80"),
             pdfUrl: fileUrl,
             fileName: rawFile.name,
             link: fileUrl,
@@ -318,10 +327,17 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           });
         } catch {}
 
+        let pdfThumb = '';
+        if (!isImage) {
+          try {
+            pdfThumb = (await renderPdfFirstPageToImage(editNewFile)) || '';
+          } catch {}
+        }
+
         const finalUrl = res.item?.pdfUrl || fileDataUrl || updatedPdfUrl;
         const finalImage = isImage
           ? (res.item?.imageUrl || fileDataUrl || editingItem.imageUrl)
-          : (res.item?.imageUrl || editingItem.imageUrl || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80");
+          : (res.item?.imageUrl || pdfThumb || editingItem.imageUrl || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80");
 
         const updatedItem: PortfolioItem = {
           ...editingItem,
@@ -1020,7 +1036,6 @@ export const UploadPage: React.FC<UploadPageProps> = ({
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {localItems.map((item, idx) => {
-              const isImage = item.category === 'Image' || (item.fileName && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(item.fileName));
               const isBeingDragged = draggedIndex === idx;
               const isDraggedOver = dragOverIndex === idx && draggedIndex !== idx;
 
@@ -1209,20 +1224,11 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}>
-                        {item.imageUrl ? (
-                          <img
-                            src={item.imageUrl}
-                            alt={item.title}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
-                            }}
-                          />
-                        ) : isImage ? (
-                          <ImageIcon size={22} color="#2563eb" />
-                        ) : (
-                          <FileText size={22} color="#dc2626" />
-                        )}
+                        <PdfCardThumbnail
+                          imageUrl={item.imageUrl}
+                          pdfUrl={item.pdfUrl || item.link}
+                          title={item.title}
+                        />
                       </div>
 
                       {/* Text Details */}
