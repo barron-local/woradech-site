@@ -527,15 +527,12 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           marginBottom: '40px',
           boxShadow: '0 2px 8px rgba(37, 99, 235, 0.06)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
             <Bookmark size={20} color="#2563eb" />
             <h2 style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
               เพิ่มป้ายกำกับแบ่งหน่วย (Section Header)
             </h2>
           </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--notion-text-muted)', marginBottom: '18px' }}>
-            ใช้สำหรับคั่นและจัดกลุ่มผลงานในหน้า Portfolio เช่น "หน่วยที่ 1", "หน่วยที่ 2" พร้อมปรับสีพื้นหลังและสีข้อความได้ตามต้องการ
-          </p>
 
           {sectionError && (
             <div style={{
