@@ -583,9 +583,6 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0, letterSpacing: '-0.02em' }}>
                     ประวัติการศึกษา (Education)
                   </h2>
-                  <p style={{ fontSize: '0.88rem', color: 'var(--notion-text-muted)', margin: '6px 0 0', fontWeight: 400 }}>
-                    เส้นทางการศึกษาและพัฒนาการด้านวิชาชีพทางเทคโนโลยีสารสนเทศ
-                  </p>
                 </div>
 
                 {/* Timeline Container */}
