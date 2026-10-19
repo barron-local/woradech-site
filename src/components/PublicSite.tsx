@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { SiteConfig } from '../types';
 import { Carousel } from './Carousel';
 import {
@@ -19,6 +19,7 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
+import { PdfDocViewer } from './PdfDocViewer';
 
 export type PageRoute = 'home' | 'about' | 'portfolio' | '404';
 
@@ -38,6 +39,17 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewingPdf, setViewingPdf] = useState<{ url: string; title: string } | null>(null);
+
+  // Lock body scroll when modal is open so the background page does not scroll
+  useEffect(() => {
+    if (viewingPdf) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [viewingPdf]);
 
   const handleNavClick = (page: PageRoute) => {
     onNavigate(page);
@@ -704,9 +716,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '20px',
-                          paddingBottom: groupIdx < groups.length - 1 ? '36px' : '0',
-                          borderBottom: groupIdx < groups.length - 1 ? '1px dashed var(--notion-border)' : 'none'
+                          gap: '20px'
                         }}
                       >
                         {/* Section Header Banner */}
@@ -1063,30 +1073,23 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               </div>
             </div>
 
-            {/* Embedded Viewer (Supports Images and PDF) */}
-            <div style={{ flex: 1, width: '100%', height: '100%', backgroundColor: '#1e1e1e', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
+            {/* Embedded Viewer (Supports Images and Multi-page PDF scrolling) */}
+            <div style={{ flex: 1, width: '100%', height: '100%', backgroundColor: '#18181b', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               {viewingPdf.url.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(viewingPdf.url) ? (
-                <img
-                  src={viewingPdf.url}
-                  alt={viewingPdf.title}
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    objectFit: 'contain',
-                    padding: '16px'
-                  }}
-                />
+                <div style={{ width: '100%', height: '100%', overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img
+                    src={viewingPdf.url}
+                    alt={viewingPdf.title}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      objectFit: 'contain',
+                      padding: '16px'
+                    }}
+                  />
+                </div>
               ) : (
-                <iframe
-                  src={viewingPdf.url}
-                  title={viewingPdf.title}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    border: 'none',
-                    display: 'block'
-                  }}
-                />
+                <PdfDocViewer url={viewingPdf.url} title={viewingPdf.title} />
               )}
             </div>
           </div>
