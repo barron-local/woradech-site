@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { CarouselSlide } from '../types';
-import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface CarouselProps {
   slides: CarouselSlide[];
@@ -196,7 +196,7 @@ export const Carousel: React.FC<CarouselProps> = ({
                 />
 
                 {/* Slide Caption Overlay with Staggered Entrance */}
-                {(slide.title || slide.caption || hasLink) && (
+                {(slide.title || slide.caption) && (
                   <div
                     className="carousel-caption-overlay"
                     style={{
@@ -207,9 +207,8 @@ export const Carousel: React.FC<CarouselProps> = ({
                       padding: '30px 36px',
                       color: '#ffffff',
                       display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-end',
-                      gap: '20px',
+                      flexDirection: 'column',
+                      gap: '6px',
                       zIndex: 3,
                       transform: isActive ? 'translateY(0)' : 'translateY(16px)',
                       opacity: isActive ? 1 : 0,
@@ -242,31 +241,6 @@ export const Carousel: React.FC<CarouselProps> = ({
                         </p>
                       )}
                     </div>
-
-                    {hasLink && (
-                      <div
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '6px 14px',
-                          borderRadius: '20px',
-                          backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                          backdropFilter: 'blur(8px)',
-                          WebkitBackdropFilter: 'blur(8px)',
-                          border: '1px solid rgba(255, 255, 255, 0.35)',
-                          color: '#ffffff',
-                          fontSize: '0.82rem',
-                          fontWeight: 500,
-                          whiteSpace: 'nowrap',
-                          flexShrink: 0,
-                          pointerEvents: 'auto'
-                        }}
-                      >
-                        <span>ดูรายละเอียด</span>
-                        <ExternalLink size={13} />
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
