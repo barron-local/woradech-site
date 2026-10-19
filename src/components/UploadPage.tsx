@@ -478,7 +478,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           }}
         >
           <UploadCloud size={16} />
-          <span>+ อัปโหลดผลงาน (PDF / รูปภาพ)</span>
+          <span>อัปโหลดผลงาน (PDF / รูปภาพ)</span>
         </button>
 
         <button
@@ -501,7 +501,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           }}
         >
           <Bookmark size={16} />
-          <span>+ เพิ่มป้ายกำกับหน่วย (Section Header)</span>
+          <span>เพิ่มป้ายกำกับหน่วย (Section Header)</span>
         </button>
       </div>
 
