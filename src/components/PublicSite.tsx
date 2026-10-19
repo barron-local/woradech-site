@@ -108,7 +108,6 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             }}
           >
             <div style={{
-              position: 'relative',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -130,43 +129,16 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   display: 'block'
                 }}
               />
-              {/* Subtle Live Status Dot */}
-              <span
-                style={{
-                  position: 'absolute',
-                  bottom: '-2px',
-                  right: '-2px',
-                  width: '7px',
-                  height: '7px',
-                  borderRadius: '50%',
-                  backgroundColor: '#10b981',
-                  border: '1.5px solid #ffffff',
-                  boxShadow: '0 0 4px rgba(16, 185, 129, 0.5)'
-                }}
-                title="Online / Ready"
-              />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{
-                fontSize: '0.92rem',
-                fontWeight: 600,
-                color: 'var(--notion-text)',
-                letterSpacing: '-0.015em',
-                lineHeight: 1.2
-              }}>
-                014 Woradech Panphuech
-              </span>
-              <span style={{
-                fontSize: '0.68rem',
-                fontWeight: 500,
-                color: 'var(--notion-text-muted)',
-                letterSpacing: '0.02em',
-                textTransform: 'uppercase'
-              }}>
-                Portfolio & Works
-              </span>
-            </div>
+            <span style={{
+              fontSize: '0.92rem',
+              fontWeight: 600,
+              color: 'var(--notion-text)',
+              letterSpacing: '-0.015em'
+            }}>
+              014 Woradech Panphuech
+            </span>
           </div>
 
           {/* Right Group: Search Bar + Nav Links + Mobile Toggle */}
