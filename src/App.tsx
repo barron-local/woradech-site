@@ -43,17 +43,40 @@ export default function App() {
       isFetching = true;
       try {
         const cloudItems = await fetchProjectsFromSupabase();
-        if (cloudItems && isMounted && cloudItems.length > 0) {
+        if (cloudItems && isMounted) {
           setConfig((prev) => {
-            const currentStr = JSON.stringify(prev.portfolio.items);
-            const cloudStr = JSON.stringify(cloudItems);
+            // Find any local items (e.g. newly added sections with id 'section-xxx' or 'file-xxx' not yet in cloud)
+            const localOnlyItems = prev.portfolio.items.filter(
+              item => item.id.startsWith('section-') || item.id.startsWith('file-') || item.id.startsWith('img-') || item.id.startsWith('pdf-')
+            );
 
-            if (currentStr !== cloudStr) {
+            // Reconstruct merged list preserving user order
+            let mergedItems: PortfolioItem[] = [];
+            if (localOnlyItems.length === 0) {
+              mergedItems = cloudItems;
+            } else {
+              // Map cloud items by ID
+              const cloudMap = new Map(cloudItems.map(item => [item.id, item]));
+              mergedItems = prev.portfolio.items.map(item => {
+                return cloudMap.get(item.id) || item;
+              });
+              // Append any cloud items that were added from another device
+              cloudItems.forEach(ci => {
+                if (!prev.portfolio.items.some(pi => pi.id === ci.id)) {
+                  mergedItems.push(ci);
+                }
+              });
+            }
+
+            const currentStr = JSON.stringify(prev.portfolio.items);
+            const mergedStr = JSON.stringify(mergedItems);
+
+            if (currentStr !== mergedStr && mergedItems.length > 0) {
               const updated = {
                 ...prev,
                 portfolio: {
                   ...prev.portfolio,
-                  items: cloudItems
+                  items: mergedItems
                 }
               };
               saveSiteConfig(updated);
