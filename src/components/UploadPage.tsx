@@ -410,13 +410,10 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     <div style={{ maxWidth: '820px', margin: '40px auto', padding: '0 24px 80px' }}>
       
       {/* Page Title */}
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '1.85rem', fontWeight: 700, color: 'var(--notion-text)', marginBottom: '8px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '1.85rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
           จัดการผลงาน Portfolio (PDF & รูปภาพ Upload & Manage)
         </h1>
-        <p style={{ fontSize: '0.92rem', color: 'var(--notion-text-muted)' }}>
-          อัปโหลดไฟล์ PDF หรืองานรูปภาพใหม่ หรือแก้ไข/ลบรายการผลงานที่มีอยู่ โดยข้อมูลจะอัปเดตไปแสดงที่หน้า Portfolio ทันที
-        </p>
       </div>
 
       {isSuccess && (
