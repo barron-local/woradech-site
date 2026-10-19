@@ -590,6 +590,9 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
                 {/* Timeline Container */}
                 <div className="edu-timeline-track">
+                  {/* Continuous Vertical Timeline Spine */}
+                  <div className="edu-timeline-spine" />
+
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     {config.about.education.map((edu, idx) => (
                       <div
@@ -598,6 +601,12 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                         className="search-scroll-target"
                         style={{ position: 'relative' }}
                       >
+                        {/* Minimalist Timeline Node Dot */}
+                        <div
+                          className={`edu-timeline-minimal-dot ${edu.current ? 'is-current' : ''}`}
+                          title={edu.current ? 'กำลังศึกษาอยู่ (ปัจจุบัน)' : edu.degree}
+                        />
+
                         {/* Education Card */}
                         <div
                           className={`edu-timeline-card edu-card ${edu.current ? 'is-current' : ''}`}
