@@ -448,7 +448,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           boxShadow: isOpen ? '0 0 0 2px rgba(37, 99, 235, 0.15)' : 'none',
           borderRadius: '6px',
           padding: '5px 10px',
-          width: '260px',
+          width: '200px',
           maxWidth: '100%',
           transition: 'all 0.15s ease',
           cursor: 'text'
@@ -466,7 +466,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="ค้นหาทุกอย่าง... (ชื่องาน, หน่วย, ป้ายกำกับ)"
+          placeholder="ค้นหา"
           style={{
             border: 'none',
             background: 'transparent',
@@ -477,7 +477,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
             padding: 0
           }}
         />
-        {query ? (
+        {query && (
           <button
             type="button"
             onClick={(e) => {
@@ -497,22 +497,6 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           >
             <X size={13} />
           </button>
-        ) : (
-          <kbd
-            style={{
-              fontSize: '0.65rem',
-              fontWeight: 600,
-              color: '#71717a',
-              backgroundColor: '#ffffff',
-              border: '1px solid #d4d4d8',
-              borderRadius: '4px',
-              padding: '1px 5px',
-              flexShrink: 0,
-              userSelect: 'none'
-            }}
-          >
-            Ctrl K
-          </kbd>
         )}
       </div>
 
@@ -537,7 +521,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           cursor: 'pointer'
         }}
         aria-label="ค้นหา"
-        title="ค้นหาทุกอย่าง"
+        title="ค้นหา"
       >
         <Search size={16} />
       </button>
@@ -561,23 +545,6 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           }}
           className="search-suggestions-dropdown"
         >
-          {/* Header context info */}
-          <div
-            style={{
-              padding: '8px 12px',
-              backgroundColor: '#fafafa',
-              borderBottom: '1px solid #f4f4f5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: '0.74rem',
-              color: '#71717a'
-            }}
-          >
-            <span>{query ? `ผลการค้นหาสำหรับ "${query}"` : 'แนะนำด่วน (Quick Suggestions)'}</span>
-            <span style={{ fontSize: '0.7rem', color: '#a1a1aa' }}>กดลูกศร ↑ ↓ เพื่อเลือก • ↵ เพื่อไป</span>
-          </div>
-
           {/* List of Suggestions */}
           <div style={{ maxHeight: '360px', overflowY: 'auto', padding: '4px 0' }}>
             {searchResults.length > 0 ? (
@@ -684,23 +651,6 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Footer note */}
-          <div
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#fafafa',
-              borderTop: '1px solid #f4f4f5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: '0.72rem',
-              color: '#a1a1aa'
-            }}
-          >
-            <span>Everything Search • ค้นหาทุกส่วนในเว็บ</span>
-            <span>Esc เพื่อปิด</span>
           </div>
         </div>
       )}
