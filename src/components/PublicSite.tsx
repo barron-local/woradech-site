@@ -500,7 +500,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
                         {/* Education Card */}
                         <div
-                          className="notion-card"
+                          className="notion-card edu-card"
                           style={{
                             padding: '24px 28px',
                             display: 'flex',
@@ -565,23 +565,28 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                               </div>
                             )}
 
-                            {/* ระดับการศึกษา (Degree) */}
-                            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: edu.major ? '8px' : '0' }}>
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                fontSize: '0.92rem',
-                                color: 'var(--notion-text)',
-                                fontWeight: 600,
-                                backgroundColor: 'var(--notion-sidebar)',
-                                padding: '5px 12px',
-                                borderRadius: 'var(--radius-xs)',
-                                border: '1px solid var(--notion-border)'
-                              }}>
-                                <Award size={15} color="var(--notion-text)" />
-                                <span>{edu.degree}</span>
-                              </div>
+                              {/* ระดับการศึกษา (Degree) */}
+                              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: edu.major ? '8px' : '0' }}>
+                                <div
+                                  className="edu-degree-badge"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    fontSize: '0.88rem',
+                                    color: 'var(--notion-text)',
+                                    fontWeight: 600,
+                                    backgroundColor: 'var(--notion-sidebar)',
+                                    padding: '5px 12px',
+                                    borderRadius: 'var(--radius-xs)',
+                                    border: '1px solid var(--notion-border)',
+                                    maxWidth: '100%',
+                                    lineHeight: 1.4
+                                  }}
+                                >
+                                  <Award size={15} color="var(--notion-text)" style={{ flexShrink: 0 }} />
+                                  <span style={{ wordBreak: 'break-word' }}>{edu.degree}</span>
+                                </div>
 
                               {/* สาขาวิชา (Major / Field of Study) แยกกล่องต่างหาก */}
                               {edu.major && (

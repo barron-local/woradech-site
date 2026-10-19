@@ -283,6 +283,25 @@ h1, h2, h3, h4, h5, h6 {
   h1 {
     font-size: 1.85rem !important;
   }
+
+  /* Education Card Mobile Optimization */
+  .edu-card {
+    padding: 16px 18px !important;
+    gap: 14px !important;
+    align-items: flex-start !important;
+  }
+
+  .edu-card > div:first-child {
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+  }
+
+  .edu-degree-badge {
+    font-size: 0.82rem !important;
+    padding: 4px 10px !important;
+    white-space: normal !important;
+  }
 }
 
 @media (max-width: 480px) {
