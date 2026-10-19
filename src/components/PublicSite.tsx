@@ -319,7 +319,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                     <div>
                       <div style={{ fontSize: '0.82rem', color: 'var(--notion-text-muted)', marginBottom: '3px' }}>กำลังศึกษาอยู่ระดับชั้น</div>
                       <div style={{ fontSize: '0.96rem', fontWeight: 600, color: 'var(--notion-text)', lineHeight: 1.5 }}>
-                        <div>ปวส. 1</div>
+                        <div>ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส. 1)</div>
                         <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--notion-text)' }}>แผนกเทคโนโลยีสารสนเทศ</div>
                       </div>
                     </div>
@@ -666,7 +666,67 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               )
             ) : (
               <div className="portfolio-grid">
-                {config.portfolio.items.map((item) => (
+                {config.portfolio.items.map((item) => {
+                  // Check if this item is a section divider banner
+                  if (item.itemType === 'section') {
+                    const bg = item.sectionBg || '#f3f4f6';
+                    const textColor = item.sectionColor || '#1f2937';
+                    const borderColor = item.sectionBorder || '#e5e7eb';
+
+                    return (
+                      <div
+                        key={item.id}
+                        style={{
+                          gridColumn: '1 / -1',
+                          backgroundColor: bg,
+                          color: textColor,
+                          border: `1.5px solid ${borderColor}`,
+                          borderRadius: '12px',
+                          padding: '16px 24px',
+                          marginTop: '20px',
+                          marginBottom: '6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '16px',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                          position: 'relative'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{
+                            width: '8px',
+                            height: '24px',
+                            borderRadius: '4px',
+                            backgroundColor: textColor,
+                            opacity: 0.8
+                          }} />
+                          <h2 style={{
+                            fontSize: '1.28rem',
+                            fontWeight: 700,
+                            color: textColor,
+                            margin: 0,
+                            letterSpacing: '-0.01em',
+                            lineHeight: 1.3
+                          }}>
+                            {item.title}
+                          </h2>
+                        </div>
+                        {item.description && (
+                          <div style={{
+                            fontSize: '0.88rem',
+                            opacity: 0.85,
+                            color: textColor,
+                            fontWeight: 500
+                          }}>
+                            {item.description}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
                   <div
                     key={item.id}
                     className="notion-card"
@@ -821,7 +881,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>

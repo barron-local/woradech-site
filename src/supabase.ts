@@ -49,18 +49,39 @@ export async function fetchProjectsFromSupabase(): Promise<PortfolioItem[] | nul
     }
 
     if (data) {
-      return data.map((row: SupabaseProjectRow) => ({
-        id: row.id || `p-${Date.now()}`,
-        title: row.title,
-        category: row.category || 'PDF Document',
-        description: row.description || '',
-        imageUrl: row.image_url || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
-        pdfUrl: row.pdf_url,
-        fileName: row.file_name,
-        link: row.pdf_url,
-        tags: ['PDF', row.category || 'Document'],
-        createdAt: row.created_at
-      }));
+      return data.map((row: SupabaseProjectRow) => {
+        const isSection = (row.category || '').startsWith('SECTION:::') || row.category === 'Section';
+        let sectionBg = '#f3f4f6';
+        let sectionColor = '#1f2937';
+        let sectionBorder = '#e5e7eb';
+        let realCategory = row.category || 'PDF Document';
+
+        if (row.category && row.category.startsWith('SECTION:::')) {
+          const parts = row.category.split(':::');
+          // parts: ['SECTION', bg, color, border, optional category name]
+          sectionBg = parts[1] || sectionBg;
+          sectionColor = parts[2] || sectionColor;
+          sectionBorder = parts[3] || sectionBorder;
+          realCategory = parts[4] || 'Section';
+        }
+
+        return {
+          id: row.id || `p-${Date.now()}`,
+          title: row.title,
+          category: realCategory,
+          description: row.description || '',
+          imageUrl: row.image_url || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+          pdfUrl: row.pdf_url,
+          fileName: row.file_name,
+          link: row.pdf_url,
+          tags: isSection ? ['Section'] : ['PDF', realCategory],
+          createdAt: row.created_at,
+          itemType: isSection ? 'section' : 'project',
+          sectionBg: isSection ? sectionBg : undefined,
+          sectionColor: isSection ? sectionColor : undefined,
+          sectionBorder: isSection ? sectionBorder : undefined
+        };
+      });
     }
   } catch (err) {
     console.error('Error fetching from Supabase:', err);
@@ -161,6 +182,96 @@ export async function uploadProjectToSupabase(params: {
   }
 }
 
+export async function createSectionInSupabase(params: {
+  title: string;
+  sectionBg: string;
+  sectionColor: string;
+  sectionBorder?: string;
+}): Promise<{ success: boolean; item?: PortfolioItem; error?: string }> {
+  const supabase = getSupabaseClient();
+  const encodedCategory = `SECTION:::${params.sectionBg}:::${params.sectionColor}:::${params.sectionBorder || '#e5e7eb'}:::Section`;
+  
+  if (!supabase) {
+    const fallbackItem: PortfolioItem = {
+      id: `section-${Date.now()}`,
+      title: params.title.trim(),
+      category: 'Section',
+      description: '',
+      imageUrl: '',
+      pdfUrl: '',
+      fileName: '',
+      link: '',
+      tags: ['Section'],
+      createdAt: new Date().toISOString(),
+      itemType: 'section',
+      sectionBg: params.sectionBg,
+      sectionColor: params.sectionColor,
+      sectionBorder: params.sectionBorder || '#e5e7eb'
+    };
+    return { success: true, item: fallbackItem };
+  }
+
+  try {
+    const { data: inserted, error: insertError } = await supabase
+      .from('projects')
+      .insert([
+        {
+          title: params.title.trim(),
+          category: encodedCategory,
+          description: '',
+          file_name: '',
+          pdf_url: '',
+          image_url: ''
+        }
+      ])
+      .select()
+      .single();
+
+    if (insertError) {
+      console.warn('Database insert section note:', insertError.message);
+      const fallbackItem: PortfolioItem = {
+        id: `section-${Date.now()}`,
+        title: params.title.trim(),
+        category: 'Section',
+        description: '',
+        imageUrl: '',
+        pdfUrl: '',
+        fileName: '',
+        link: '',
+        tags: ['Section'],
+        createdAt: new Date().toISOString(),
+        itemType: 'section',
+        sectionBg: params.sectionBg,
+        sectionColor: params.sectionColor,
+        sectionBorder: params.sectionBorder || '#e5e7eb'
+      };
+      return { success: true, item: fallbackItem };
+    }
+
+    const newItem: PortfolioItem = {
+      id: inserted.id,
+      title: inserted.title,
+      category: 'Section',
+      description: '',
+      imageUrl: '',
+      pdfUrl: '',
+      fileName: '',
+      link: '',
+      tags: ['Section'],
+      createdAt: inserted.created_at || new Date().toISOString(),
+      itemType: 'section',
+      sectionBg: params.sectionBg,
+      sectionColor: params.sectionColor,
+      sectionBorder: params.sectionBorder || '#e5e7eb'
+    };
+
+    return { success: true, item: newItem };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'เกิดข้อผิดพลาดในการสร้างป้ายกำกับหน่วย' };
+  }
+}
+
+
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -238,17 +349,36 @@ export async function updateProjectInSupabase(params: {
 
     const row = data && data.length > 0 ? data[0] : null;
 
+    const rowCategory = updatePayload.category || row?.category || 'PDF Document';
+    const isSection = rowCategory.startsWith('SECTION:::') || rowCategory === 'Section';
+    let sectionBg = '#f3f4f6';
+    let sectionColor = '#1f2937';
+    let sectionBorder = '#e5e7eb';
+    let realCategory = rowCategory;
+
+    if (rowCategory.startsWith('SECTION:::')) {
+      const parts = rowCategory.split(':::');
+      sectionBg = parts[1] || sectionBg;
+      sectionColor = parts[2] || sectionColor;
+      sectionBorder = parts[3] || sectionBorder;
+      realCategory = parts[4] || 'Section';
+    }
+
     const updatedItem: PortfolioItem = {
       id: params.id,
       title: updatePayload.title,
-      category: updatePayload.category || 'PDF Document',
+      category: realCategory,
       description: updatePayload.description || '',
-      imageUrl: (row && row.image_url) ? row.image_url : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+      imageUrl: (row && row.image_url) ? row.image_url : (isSection ? '' : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80"),
       pdfUrl: updatePayload.pdf_url || (row ? row.pdf_url : ''),
       fileName: updatePayload.file_name || (row ? row.file_name : ''),
       link: updatePayload.pdf_url || (row ? row.pdf_url : ''),
-      tags: ['PDF', updatePayload.category || 'Document'],
-      createdAt: row?.created_at
+      tags: isSection ? ['Section'] : ['PDF', realCategory],
+      createdAt: row?.created_at,
+      itemType: isSection ? 'section' : 'project',
+      sectionBg: isSection ? sectionBg : undefined,
+      sectionColor: isSection ? sectionColor : undefined,
+      sectionBorder: isSection ? sectionBorder : undefined
     };
 
     return { success: true, item: updatedItem };

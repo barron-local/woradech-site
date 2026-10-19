@@ -18,6 +18,10 @@ export interface PortfolioItem {
   pdfUrl?: string;
   fileName?: string;
   createdAt?: string;
+  itemType?: 'project' | 'section';
+  sectionBg?: string;
+  sectionColor?: string;
+  sectionBorder?: string;
 }
 
 export interface EducationItem {
@@ -96,7 +100,7 @@ export const defaultSiteConfig: SiteConfig = {
   navLinks: {
     home: "Home",
     about: "About",
-    portfolio: "Portfolio"
+    portfolio: "My Work"
   },
   heroImage: {
     imageUrl: "/banner.png",
@@ -179,7 +183,7 @@ export const defaultSiteConfig: SiteConfig = {
     happyClients: "30+"
   },
   portfolio: {
-    title: "Portfolio & Projects",
+    title: "My Work",
     subtitle: "",
     items: []
   },
@@ -218,8 +222,13 @@ export function loadSiteConfig(): SiteConfig {
             ? parsed.heroImage.imageUrl
             : defaultSiteConfig.heroImage.imageUrl
         },
+        navLinks: {
+          ...defaultSiteConfig.navLinks,
+          portfolio: "My Work"
+        },
         portfolio: {
           ...defaultSiteConfig.portfolio,
+          title: "My Work",
           ...(parsed.portfolio || {}),
           items: (parsed.portfolio?.items && parsed.portfolio.items.length > 0)
             ? parsed.portfolio.items

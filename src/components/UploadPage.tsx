@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { PortfolioItem } from '../types';
-import { UploadCloud, FileText, CheckCircle2, Edit2, Trash2, ExternalLink, X, Save, AlertCircle, Image as ImageIcon, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
-import { uploadProjectToSupabase, updateProjectInSupabase, deleteProjectFromSupabase } from '../supabase';
+import { UploadCloud, FileText, CheckCircle2, Edit2, Trash2, ExternalLink, X, Save, AlertCircle, Image as ImageIcon, GripVertical, ChevronUp, ChevronDown, Bookmark, Palette } from 'lucide-react';
+import { uploadProjectToSupabase, updateProjectInSupabase, deleteProjectFromSupabase, createSectionInSupabase } from '../supabase';
 
 interface UploadPageProps {
   projects: PortfolioItem[];
@@ -12,6 +12,18 @@ interface UploadPageProps {
   onNavigateToPortfolio?: () => void;
 }
 
+// Preset color options for sections (Notion inspired colors)
+const SECTION_COLOR_PRESETS = [
+  { name: 'เทา (Default)', bg: '#f3f4f6', text: '#1f2937', border: '#e5e7eb' },
+  { name: 'น้ำเงิน (Blue)', bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
+  { name: 'เขียว (Green)', bg: '#f0fdf4', text: '#166534', border: '#bbf7d0' },
+  { name: 'ม่วง (Purple)', bg: '#faf5ff', text: '#6b21a8', border: '#e9d5ff' },
+  { name: 'ส้ม (Orange)', bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
+  { name: 'เหลือง (Yellow)', bg: '#fefce8', text: '#854d0e', border: '#fef08a' },
+  { name: 'ชมพู (Rose)', bg: '#fff1f2', text: '#9f1239', border: '#fecdd3' },
+  { name: 'ดำคลาสสิก (Dark)', bg: '#1f2937', text: '#ffffff', border: '#374151' }
+];
+
 export const UploadPage: React.FC<UploadPageProps> = ({
   projects,
   onAddProject,
@@ -20,6 +32,9 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   onReorderProjects,
   onNavigateToPortfolio
 }) => {
+  // Mode toggle: 'project' (อัปโหลดงาน) vs 'section' (เพิ่มป้ายกำกับหน่วย)
+  const [activeTab, setActiveTab] = useState<'project' | 'section'>('project');
+
   // Local state for instantaneous UI updates when reordering
   const [localItems, setLocalItems] = useState<PortfolioItem[]>(projects);
 
@@ -32,7 +47,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Form State for New Upload
+  // Form State for New Upload (Project)
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [rawFile, setRawFile] = useState<File | null>(null);
@@ -41,10 +56,22 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Form State for New Section (ป้ายกำกับหน่วย)
+  const [sectionTitle, setSectionTitle] = useState('');
+  const [sectionBg, setSectionBg] = useState('#eff6ff');
+  const [sectionColor, setSectionColor] = useState('#1e40af');
+  const [sectionBorder, setSectionBorder] = useState('#bfdbfe');
+  const [isAddingSection, setIsAddingSection] = useState(false);
+  const [sectionSuccess, setSectionSuccess] = useState(false);
+  const [sectionError, setSectionError] = useState('');
+
   // Edit Modal State
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editSectionBg, setEditSectionBg] = useState('#f3f4f6');
+  const [editSectionColor, setEditSectionColor] = useState('#1f2937');
+  const [editSectionBorder, setEditSectionBorder] = useState('#e5e7eb');
   const [editNewFile, setEditNewFile] = useState<File | null>(null);
   const [editFileInfo, setEditFileInfo] = useState<{ name: string; size: string; isImage: boolean } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -149,10 +176,46 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     }
   };
 
+  // Handler for adding a new section banner
+  const handleCreateSection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sectionTitle.trim()) {
+      setSectionError('กรุณาระบุชื่อป้ายกำกับหน่วย เช่น หน่วยที่ 1');
+      return;
+    }
+
+    setIsAddingSection(true);
+    setSectionError('');
+
+    try {
+      const res = await createSectionInSupabase({
+        title: sectionTitle.trim(),
+        sectionBg,
+        sectionColor,
+        sectionBorder
+      });
+
+      if (res.success && res.item) {
+        onAddProject(res.item);
+        setSectionSuccess(true);
+        setSectionTitle('');
+      } else {
+        setSectionError(res.error || 'เกิดข้อผิดพลาดในการสร้างป้ายกำกับหน่วย');
+      }
+    } catch (err: any) {
+      setSectionError(err.message || 'เกิดข้อผิดพลาดในการสร้างป้ายกำกับหน่วย');
+    } finally {
+      setIsAddingSection(false);
+    }
+  };
+
   const startEdit = (item: PortfolioItem) => {
     setEditingItem(item);
     setEditTitle(item.title);
     setEditDescription(item.description || '');
+    setEditSectionBg(item.sectionBg || '#f3f4f6');
+    setEditSectionColor(item.sectionColor || '#1f2937');
+    setEditSectionBorder(item.sectionBorder || '#e5e7eb');
     setEditNewFile(null);
     setEditFileInfo(null);
     setEditError('');
@@ -182,7 +245,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   const handleSaveEdit = async () => {
     if (!editingItem) return;
     if (!editTitle.trim()) {
-      setEditError('กรุณาระบุชื่องาน');
+      setEditError('กรุณาระบุชื่อ');
       return;
     }
 
@@ -190,6 +253,31 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     setEditError('');
 
     try {
+      // If editing a section
+      if (editingItem.itemType === 'section') {
+        const encodedCategory = `SECTION:::${editSectionBg}:::${editSectionColor}:::${editSectionBorder}:::Section`;
+        await updateProjectInSupabase({
+          id: editingItem.id,
+          title: editTitle.trim(),
+          category: encodedCategory
+        });
+
+        const updatedItem: PortfolioItem = {
+          ...editingItem,
+          title: editTitle.trim(),
+          category: 'Section',
+          itemType: 'section',
+          sectionBg: editSectionBg,
+          sectionColor: editSectionColor,
+          sectionBorder: editSectionBorder,
+          tags: ['Section']
+        };
+        onUpdateProject(updatedItem);
+        setEditingItem(null);
+        return;
+      }
+
+      // Normal project item
       const res = await updateProjectInSupabase({
         id: editingItem.id,
         title: editTitle.trim(),
@@ -343,7 +431,274 @@ export const UploadPage: React.FC<UploadPageProps> = ({
         </div>
       )}
 
-      {/* 1. UPLOAD FORM */}
+      {/* Mode Switch Tabs */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginBottom: '20px',
+        backgroundColor: '#f3f4f6',
+        padding: '4px',
+        borderRadius: '8px',
+        width: 'fit-content'
+      }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('project')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            border: 'none',
+            fontSize: '0.88rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            backgroundColor: activeTab === 'project' ? '#ffffff' : 'transparent',
+            color: activeTab === 'project' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
+            boxShadow: activeTab === 'project' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <UploadCloud size={16} />
+          <span>+ อัปโหลดผลงาน (PDF / รูปภาพ)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('section')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            border: 'none',
+            fontSize: '0.88rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            backgroundColor: activeTab === 'section' ? '#ffffff' : 'transparent',
+            color: activeTab === 'section' ? '#2563eb' : 'var(--notion-text-muted)',
+            boxShadow: activeTab === 'section' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Bookmark size={16} />
+          <span>+ เพิ่มป้ายกำกับหน่วย (Section Header)</span>
+        </button>
+      </div>
+
+      {sectionSuccess && (
+        <div style={{
+          padding: '14px 18px',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid #bbf7d0',
+          backgroundColor: '#f0fdf4',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CheckCircle2 size={20} color="#16a34a" />
+            <span style={{ fontSize: '0.92rem', fontWeight: 600, color: '#166534' }}>
+              สร้างป้ายกำกับหน่วยเรียบร้อยแล้ว! สามารถลากจัดตำแหน่งได้ในรายการด้านล่าง
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSectionSuccess(false)}
+            className="notion-btn notion-btn-subtle"
+            style={{ fontSize: '0.8rem', padding: '2px 8px', color: '#166534' }}
+          >
+            ✕ ปิด
+          </button>
+        </div>
+      )}
+
+      {/* 1A. TAB: SECTION BANNER FORM */}
+      {activeTab === 'section' && (
+        <form onSubmit={handleCreateSection} style={{
+          background: '#ffffff',
+          border: '1.5px solid #bfdbfe',
+          borderRadius: 'var(--radius-sm)',
+          padding: '24px',
+          marginBottom: '40px',
+          boxShadow: '0 2px 8px rgba(37, 99, 235, 0.06)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Bookmark size={20} color="#2563eb" />
+            <h2 style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
+              เพิ่มป้ายกำกับแบ่งหน่วย (Section Header)
+            </h2>
+          </div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--notion-text-muted)', marginBottom: '18px' }}>
+            ใช้สำหรับคั่นและจัดกลุ่มผลงานในหน้า Portfolio เช่น "หน่วยที่ 1", "หน่วยที่ 2" พร้อมปรับสีพื้นหลังและสีข้อความได้ตามต้องการ
+          </p>
+
+          {sectionError && (
+            <div style={{
+              padding: '10px 14px',
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#dc2626',
+              borderRadius: 'var(--radius-xs)',
+              fontSize: '0.85rem',
+              marginBottom: '16px'
+            }}>
+              {sectionError}
+            </div>
+          )}
+
+          {/* Section Title */}
+          <div style={{ marginBottom: '18px' }}>
+            <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+              ชื่อป้ายกำกับ / ชื่อหน่วย: <span style={{ color: '#e03e3e' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={sectionTitle}
+              onChange={(e) => setSectionTitle(e.target.value)}
+              placeholder="เช่น หน่วยที่ 1 : พื้นฐานการเขียนโปรแกรม"
+              className="notion-input"
+              style={{ fontSize: '0.94rem', padding: '10px 12px' }}
+            />
+          </div>
+
+          {/* Quick Color Presets */}
+          <div style={{ marginBottom: '18px' }}>
+            <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+              <Palette size={15} color="#2563eb" />
+              <span>เลือกโทนสีสำเร็จรูป (Color Presets):</span>
+            </label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {SECTION_COLOR_PRESETS.map((preset) => {
+                const isSelected = sectionBg === preset.bg && sectionColor === preset.text;
+                return (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() => {
+                      setSectionBg(preset.bg);
+                      setSectionColor(preset.text);
+                      setSectionBorder(preset.border);
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      border: `1.5px solid ${isSelected ? '#2563eb' : preset.border}`,
+                      backgroundColor: preset.bg,
+                      color: preset.text,
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: isSelected ? '0 0 0 2px #93c5fd' : 'none',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <span>{preset.name}</span>
+                    {isSelected && <CheckCircle2 size={13} color={preset.text} />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Custom Color Pickers */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '16px',
+            marginBottom: '22px',
+            padding: '14px',
+            backgroundColor: '#f9fafb',
+            borderRadius: '8px',
+            border: '1px solid var(--notion-border)'
+          }}>
+            <div>
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--notion-text)', display: 'block', marginBottom: '6px' }}>
+                สีพื้นหลัง (Background):
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="color"
+                  value={sectionBg}
+                  onChange={(e) => setSectionBg(e.target.value)}
+                  style={{ width: '40px', height: '36px', borderRadius: '6px', border: '1px solid #d1d5db', cursor: 'pointer', padding: '2px' }}
+                />
+                <input
+                  type="text"
+                  value={sectionBg}
+                  onChange={(e) => setSectionBg(e.target.value)}
+                  className="notion-input"
+                  style={{ fontSize: '0.85rem', padding: '6px 10px', width: '110px' }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--notion-text)', display: 'block', marginBottom: '6px' }}>
+                สีข้อความ (Text Color):
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="color"
+                  value={sectionColor}
+                  onChange={(e) => setSectionColor(e.target.value)}
+                  style={{ width: '40px', height: '36px', borderRadius: '6px', border: '1px solid #d1d5db', cursor: 'pointer', padding: '2px' }}
+                />
+                <input
+                  type="text"
+                  value={sectionColor}
+                  onChange={(e) => setSectionColor(e.target.value)}
+                  className="notion-input"
+                  style={{ fontSize: '0.85rem', padding: '6px 10px', width: '110px' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Live Preview Box */}
+          <div style={{ marginBottom: '22px' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--notion-text-muted)', display: 'block', marginBottom: '6px' }}>
+              ตัวอย่างการแสดงผล (Preview):
+            </span>
+            <div style={{
+              backgroundColor: sectionBg,
+              color: sectionColor,
+              border: `1.5px solid ${sectionBorder}`,
+              borderRadius: '10px',
+              padding: '14px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+            }}>
+              <div style={{ width: '6px', height: '20px', borderRadius: '3px', backgroundColor: sectionColor, opacity: 0.8 }} />
+              <span style={{ fontSize: '1.12rem', fontWeight: 700 }}>
+                {sectionTitle.trim() || 'ตัวอย่างชื่อหน่วย (เช่น หน่วยที่ 1)'}
+              </span>
+            </div>
+          </div>
+
+          {/* Submit Section */}
+          <button
+            type="submit"
+            disabled={isAddingSection}
+            className="notion-btn notion-btn-primary"
+            style={{ width: '100%', padding: '11px', fontSize: '0.92rem', fontWeight: 600, opacity: isAddingSection ? 0.7 : 1 }}
+          >
+            {isAddingSection ? 'กำลังบันทึกป้ายกำกับ...' : '+ บันทึกป้ายกำกับหน่วย'}
+          </button>
+        </form>
+      )}
+
+      {/* 1B. TAB: UPLOAD PROJECT FORM */}
+      {activeTab === 'project' && (
       <form onSubmit={handleSubmit} style={{
           background: '#ffffff',
           border: '1px solid var(--notion-border)',
@@ -459,6 +814,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
             {isUploading ? 'กำลังอัปโหลด...' : 'บันทึกและส่งผลงานเข้า Portfolio'}
           </button>
       </form>
+      )}
 
       {/* 2. MANAGE EXISTING PROJECTS LIST */}
       <div>
@@ -658,94 +1014,140 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Left: Thumbnail & Main Info */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
-                    {/* Thumbnail Preview */}
-                    <div style={{
-                      width: '56px',
-                      height: '56px',
-                      borderRadius: '8px',
-                      overflow: 'hidden',
-                      backgroundColor: '#f3f4f6',
-                      border: '1px solid var(--notion-border)',
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.title}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
-                          }}
-                        />
-                      ) : isImage ? (
-                        <ImageIcon size={22} color="#2563eb" />
-                      ) : (
-                        <FileText size={22} color="#dc2626" />
-                      )}
-                    </div>
+                  {/* Left: Thumbnail & Main Info (Distinct for Section Header vs Regular Project) */}
+                  {item.itemType === 'section' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        width: '56px',
+                        height: '46px',
+                        borderRadius: '8px',
+                        backgroundColor: item.sectionBg || '#eff6ff',
+                        border: `1.5px solid ${item.sectionBorder || '#bfdbfe'}`,
+                        color: item.sectionColor || '#1e40af',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <Bookmark size={22} />
+                      </div>
 
-                    {/* Text Details */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                          <span style={{
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            backgroundColor: item.sectionBg || '#eff6ff',
+                            color: item.sectionColor || '#1e40af',
+                            border: `1px solid ${item.sectionBorder || '#bfdbfe'}`
+                          }}>
+                            ป้ายกำกับหน่วย / SECTION
+                          </span>
+                        </div>
                         <span style={{
-                          fontSize: '1.02rem',
-                          fontWeight: 650,
+                          fontSize: '1.08rem',
+                          fontWeight: 700,
                           color: 'var(--notion-text)',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          display: 'block'
                         }}>
                           {item.title}
                         </span>
                       </div>
-
-                      {item.description && (
-                        <p style={{
-                          fontSize: '0.86rem',
-                          color: 'var(--notion-text-muted)',
-                          margin: '0 0 6px 0',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          lineHeight: 1.4
-                        }}>
-                          {item.description}
-                        </p>
-                      )}
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.8rem', color: 'var(--notion-text-muted)' }}>
-                        {item.fileName && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            <FileText size={13} color="#9ca3af" />
-                            {item.fileName}
-                          </span>
-                        )}
-                        {item.pdfUrl && (
-                          <a
-                            href={item.pdfUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              color: '#2563eb',
-                              fontWeight: 500,
-                              textDecoration: 'none'
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
+                      {/* Thumbnail Preview */}
+                      <div style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        backgroundColor: '#f3f4f6',
+                        border: '1px solid var(--notion-border)',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.title}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
                             }}
-                          >
-                            <ExternalLink size={12} />
-                            เปิดดูไฟล์
-                          </a>
+                          />
+                        ) : isImage ? (
+                          <ImageIcon size={22} color="#2563eb" />
+                        ) : (
+                          <FileText size={22} color="#dc2626" />
                         )}
                       </div>
+
+                      {/* Text Details */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{
+                            fontSize: '1.02rem',
+                            fontWeight: 650,
+                            color: 'var(--notion-text)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {item.title}
+                          </span>
+                        </div>
+
+                        {item.description && (
+                          <p style={{
+                            fontSize: '0.86rem',
+                            color: 'var(--notion-text-muted)',
+                            margin: '0 0 6px 0',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            lineHeight: 1.4
+                          }}>
+                            {item.description}
+                          </p>
+                        )}
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.8rem', color: 'var(--notion-text-muted)' }}>
+                          {item.fileName && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <FileText size={13} color="#9ca3af" />
+                              {item.fileName}
+                            </span>
+                          )}
+                          {item.pdfUrl && (
+                            <a
+                              href={item.pdfUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                color: '#2563eb',
+                                fontWeight: 500,
+                                textDecoration: 'none'
+                              }}
+                            >
+                              <ExternalLink size={12} />
+                              เปิดดูไฟล์
+                            </a>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Right: Actions */}
                   <div className="upload-item-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
@@ -870,110 +1272,238 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                 </div>
               )}
 
-              {/* Title */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-                  ชื่องาน / หัวข้อผลงาน:
-                </label>
-                <input
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="notion-input"
-                  style={{ fontSize: '0.92rem', padding: '10px 12px' }}
-                />
-              </div>
-
-              {/* Description */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-                  คำอธิบาย:
-                </label>
-                <textarea
-                  rows={3}
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  className="notion-textarea"
-                />
-              </div>
-
-              {/* Replace PDF or Image (Optional) */}
-              <div style={{ marginBottom: '22px' }}>
-                <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
-                  เปลี่ยนไฟล์แนบ (PDF หรือ รูปภาพ หากต้องการ):
-                </label>
-
-                {/* Current Active File Badge */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '9px 12px',
-                  backgroundColor: '#f9fafb',
-                  border: '1px solid var(--notion-border)',
-                  borderRadius: '6px',
-                  marginBottom: '10px',
-                  fontSize: '0.83rem'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                    <span style={{ color: 'var(--notion-text-muted)', fontSize: '0.78rem', flexShrink: 0 }}>ไฟล์เดิม:</span>
-                    <FileText size={15} color="#dc2626" style={{ flexShrink: 0 }} />
-                    <strong style={{ color: 'var(--notion-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {editingItem.fileName || 'เอกสารแนบ'}
-                    </strong>
+              {/* If editing a Section */}
+              {editingItem.itemType === 'section' ? (
+                <div>
+                  <div style={{ marginBottom: '18px' }}>
+                    <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                      ชื่อป้ายกำกับ / ชื่อหน่วย:
+                    </label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="notion-input"
+                      style={{ fontSize: '0.94rem', padding: '10px 12px' }}
+                    />
                   </div>
-                  {editingItem.pdfUrl && (
-                    <a
-                      href={editingItem.pdfUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ color: '#2563eb', textDecoration: 'none', fontSize: '0.78rem', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                    >
-                      <ExternalLink size={11} /> ดูไฟล์เดิม
-                    </a>
-                  )}
-                </div>
 
-                {/* Upload New File Area */}
-                <label style={{
-                  display: 'block',
-                  border: editFileInfo ? '1.5px solid #86efac' : '1.5px dashed var(--notion-border-dark)',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  textAlign: 'center',
-                  backgroundColor: editFileInfo ? '#f0fdf4' : '#fafafa',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}>
-                  {editFileInfo ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      <CheckCircle2 size={18} color="#16a34a" />
-                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#166534' }}>
-                        {editFileInfo.name} ({editFileInfo.size})
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: '#15803d', marginLeft: '6px' }}>(คลิกเพื่อเปลี่ยน)</span>
+                  {/* Preset Colors */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '0.84rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <Palette size={14} color="#2563eb" />
+                      <span>เลือกโทนสีสำเร็จรูป:</span>
+                    </label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {SECTION_COLOR_PRESETS.map((preset) => {
+                        const isSelected = editSectionBg === preset.bg && editSectionColor === preset.text;
+                        return (
+                          <button
+                            key={preset.name}
+                            type="button"
+                            onClick={() => {
+                              setEditSectionBg(preset.bg);
+                              setEditSectionColor(preset.text);
+                              setEditSectionBorder(preset.border);
+                            }}
+                            style={{
+                              padding: '5px 10px',
+                              borderRadius: '6px',
+                              border: `1.5px solid ${isSelected ? '#2563eb' : preset.border}`,
+                              backgroundColor: preset.bg,
+                              color: preset.text,
+                              fontSize: '0.78rem',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {preset.name}
+                          </button>
+                        );
+                      })}
                     </div>
-                  ) : (
+                  </div>
+
+                  {/* Custom Pickers */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                    gap: '12px',
+                    marginBottom: '18px',
+                    padding: '12px',
+                    backgroundColor: '#f9fafb',
+                    borderRadius: '8px',
+                    border: '1px solid var(--notion-border)'
+                  }}>
                     <div>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#f3f4f6', color: 'var(--notion-text-muted)', marginBottom: '6px' }}>
-                        <UploadCloud size={18} />
-                      </div>
-                      <div style={{ fontSize: '0.86rem', fontWeight: 500, color: 'var(--notion-text)' }}>
-                        คลิกเพื่ออัปโหลดไฟล์ใหม่แทนที่ไฟล์เดิม
-                      </div>
-                      <div style={{ fontSize: '0.76rem', color: 'var(--notion-text-muted)', marginTop: '2px' }}>
-                        รองรับทั้ง PDF หรือ รูปภาพ (.pdf, .jpg, .png, .webp)
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                        สีพื้นหลัง (Background):
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                          type="color"
+                          value={editSectionBg}
+                          onChange={(e) => setEditSectionBg(e.target.value)}
+                          style={{ width: '36px', height: '32px', borderRadius: '4px', border: '1px solid #d1d5db', cursor: 'pointer', padding: '1px' }}
+                        />
+                        <input
+                          type="text"
+                          value={editSectionBg}
+                          onChange={(e) => setEditSectionBg(e.target.value)}
+                          className="notion-input"
+                          style={{ fontSize: '0.82rem', padding: '4px 8px', width: '100px' }}
+                        />
                       </div>
                     </div>
-                  )}
-                  <input
-                    type="file"
-                    accept=".pdf,application/pdf,image/*"
-                    onChange={handleEditFileChange}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-              </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                        สีข้อความ (Text Color):
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                          type="color"
+                          value={editSectionColor}
+                          onChange={(e) => setEditSectionColor(e.target.value)}
+                          style={{ width: '36px', height: '32px', borderRadius: '4px', border: '1px solid #d1d5db', cursor: 'pointer', padding: '1px' }}
+                        />
+                        <input
+                          type="text"
+                          value={editSectionColor}
+                          onChange={(e) => setEditSectionColor(e.target.value)}
+                          className="notion-input"
+                          style={{ fontSize: '0.82rem', padding: '4px 8px', width: '100px' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Live Preview */}
+                  <div style={{ marginBottom: '18px' }}>
+                    <div style={{
+                      backgroundColor: editSectionBg,
+                      color: editSectionColor,
+                      border: `1.5px solid ${editSectionBorder}`,
+                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <div style={{ width: '6px', height: '18px', borderRadius: '3px', backgroundColor: editSectionColor, opacity: 0.8 }} />
+                      <span style={{ fontSize: '1.05rem', fontWeight: 700 }}>{editTitle || 'ชื่อหน่วย'}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* If editing a regular Project */
+                <div>
+                  {/* Title */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                      ชื่องาน / หัวข้อผลงาน:
+                    </label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="notion-input"
+                      style={{ fontSize: '0.92rem', padding: '10px 12px' }}
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                      คำอธิบาย:
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      className="notion-textarea"
+                    />
+                  </div>
+
+                  {/* Replace PDF or Image (Optional) */}
+                  <div style={{ marginBottom: '22px' }}>
+                    <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+                      เปลี่ยนไฟล์แนบ (PDF หรือ รูปภาพ หากต้องการ):
+                    </label>
+
+                    {/* Current Active File Badge */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '9px 12px',
+                      backgroundColor: '#f9fafb',
+                      border: '1px solid var(--notion-border)',
+                      borderRadius: '6px',
+                      marginBottom: '10px',
+                      fontSize: '0.83rem'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                        <span style={{ color: 'var(--notion-text-muted)', fontSize: '0.78rem', flexShrink: 0 }}>ไฟล์เดิม:</span>
+                        <FileText size={15} color="#dc2626" style={{ flexShrink: 0 }} />
+                        <strong style={{ color: 'var(--notion-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {editingItem.fileName || 'เอกสารแนบ'}
+                        </strong>
+                      </div>
+                      {editingItem.pdfUrl && (
+                        <a
+                          href={editingItem.pdfUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: '#2563eb', textDecoration: 'none', fontSize: '0.78rem', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                        >
+                          <ExternalLink size={11} /> ดูไฟล์เดิม
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Upload New File Area */}
+                    <label style={{
+                      display: 'block',
+                      border: editFileInfo ? '1.5px solid #86efac' : '1.5px dashed var(--notion-border-dark)',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      textAlign: 'center',
+                      backgroundColor: editFileInfo ? '#f0fdf4' : '#fafafa',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}>
+                      {editFileInfo ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                          <CheckCircle2 size={18} color="#16a34a" />
+                          <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#166534' }}>
+                            {editFileInfo.name} ({editFileInfo.size})
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: '#15803d', marginLeft: '6px' }}>(คลิกเพื่อเปลี่ยน)</span>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#f3f4f6', color: 'var(--notion-text-muted)', marginBottom: '6px' }}>
+                            <UploadCloud size={18} />
+                          </div>
+                          <div style={{ fontSize: '0.86rem', fontWeight: 500, color: 'var(--notion-text)' }}>
+                            คลิกเพื่ออัปโหลดไฟล์ใหม่แทนที่ไฟล์เดิม
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--notion-text-muted)', marginTop: '2px' }}>
+                            รองรับทั้ง PDF หรือ รูปภาพ (.pdf, .jpg, .png, .webp)
+                          </div>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf,image/*"
+                        onChange={handleEditFileChange}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
 
               {/* Modal Buttons */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--notion-border)' }}>
