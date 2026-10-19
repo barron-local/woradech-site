@@ -707,7 +707,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                     cursor: 'pointer'
                   }}
                 >
-                  ✓ เปิดแถบ
+                  เปิดแถบ
                 </button>
                 <button
                   type="button"
@@ -724,7 +724,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                     cursor: 'pointer'
                   }}
                 >
-                  ✕ ซ่อนแถบ
+                  ซ่อนแถบ
                 </button>
               </div>
             </div>
@@ -1520,7 +1520,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                             cursor: 'pointer'
                           }}
                         >
-                          ✓ มีแถบ
+                          มีแถบ
                         </button>
                         <button
                           type="button"
@@ -1537,7 +1537,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                             cursor: 'pointer'
                           }}
                         >
-                          ✕ ไม่มี
+                          ไม่มี
                         </button>
                       </div>
                     </div>
