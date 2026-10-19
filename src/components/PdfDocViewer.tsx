@@ -126,8 +126,8 @@ const PdfCanvasPage: React.FC<{
       style={{
         backgroundColor: '#ffffff',
         borderRadius: '6px',
-        boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
-        border: '1px solid #e4e4e7',
+        boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.2), 0 2px 6px -1px rgba(0, 0, 0, 0.1)',
+        border: '1px solid var(--notion-border)',
         overflow: 'hidden',
         position: 'relative',
         display: 'flex',
@@ -469,9 +469,9 @@ export const PdfDocViewer: React.FC<PdfDocViewerProps> = ({ url, title }) => {
           flexWrap: 'wrap',
           gap: '8px',
           padding: '8px 16px',
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e9e9e7',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
+          backgroundColor: 'var(--notion-bg)',
+          borderBottom: '1px solid var(--notion-border)',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
           zIndex: 10
         }}
       >
@@ -484,11 +484,11 @@ export const PdfDocViewer: React.FC<PdfDocViewerProps> = ({ url, title }) => {
                 alignItems: 'center',
                 gap: '6px',
                 padding: '3px 8px',
-                backgroundColor: '#f4f4f5',
+                backgroundColor: 'var(--notion-sidebar)',
                 borderRadius: '6px',
-                border: '1px solid #e4e4e7',
+                border: '1px solid var(--notion-border)',
                 fontSize: '0.8rem',
-                color: '#37352f',
+                color: 'var(--notion-text)',
                 fontWeight: 500
               }}
             >
@@ -499,13 +499,13 @@ export const PdfDocViewer: React.FC<PdfDocViewerProps> = ({ url, title }) => {
                   onChange={(e) => handleJumpToPage(Number(e.target.value))}
                   style={{
                     appearance: 'none',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #d4d4d8',
+                    backgroundColor: 'var(--notion-bg)',
+                    border: '1px solid var(--notion-border-dark)',
                     borderRadius: '4px',
                     padding: '2px 20px 2px 8px',
                     fontSize: '0.8rem',
                     fontWeight: 600,
-                    color: '#18181b',
+                    color: 'var(--notion-text)',
                     cursor: 'pointer',
                     outline: 'none'
                   }}
@@ -522,11 +522,11 @@ export const PdfDocViewer: React.FC<PdfDocViewerProps> = ({ url, title }) => {
                     position: 'absolute',
                     right: '6px',
                     pointerEvents: 'none',
-                    color: '#71717a'
+                    color: 'var(--notion-text-muted)'
                   }}
                 />
               </div>
-              <span style={{ color: '#71717a' }}>/ {numPages}</span>
+              <span style={{ color: 'var(--notion-text-muted)' }}>/ {numPages}</span>
             </div>
           )}
         </div>
@@ -546,9 +546,9 @@ export const PdfDocViewer: React.FC<PdfDocViewerProps> = ({ url, title }) => {
               width: '30px',
               height: '30px',
               borderRadius: '6px',
-              border: '1px solid #e5e7eb',
-              backgroundColor: '#ffffff',
-              color: '#37352f',
+              border: '1px solid var(--notion-border)',
+              backgroundColor: 'var(--notion-bg)',
+              color: 'var(--notion-text)',
               cursor: 'pointer'
             }}
           >
@@ -563,9 +563,9 @@ export const PdfDocViewer: React.FC<PdfDocViewerProps> = ({ url, title }) => {
             style={{
               padding: '4px 10px',
               borderRadius: '6px',
-              border: '1px solid #e5e7eb',
-              backgroundColor: zoom === 1.0 ? '#fef3c7' : '#ffffff',
-              color: '#37352f',
+              border: '1px solid var(--notion-border)',
+              backgroundColor: zoom === 1.0 ? 'var(--notion-blue-bg)' : 'var(--notion-bg)',
+              color: zoom === 1.0 ? 'var(--notion-blue)' : 'var(--notion-text)',
               fontSize: '0.8rem',
               fontWeight: 600,
               cursor: 'pointer',
@@ -589,9 +589,9 @@ export const PdfDocViewer: React.FC<PdfDocViewerProps> = ({ url, title }) => {
               width: '30px',
               height: '30px',
               borderRadius: '6px',
-              border: '1px solid #e5e7eb',
-              backgroundColor: '#ffffff',
-              color: '#37352f',
+              border: '1px solid var(--notion-border)',
+              backgroundColor: 'var(--notion-bg)',
+              color: 'var(--notion-text)',
               cursor: 'pointer'
             }}
           >
@@ -610,9 +610,9 @@ export const PdfDocViewer: React.FC<PdfDocViewerProps> = ({ url, title }) => {
               width: '30px',
               height: '30px',
               borderRadius: '6px',
-              border: '1px solid #e5e7eb',
-              backgroundColor: rotation > 0 ? '#edf8f3' : '#ffffff',
-              color: rotation > 0 ? '#16a34a' : '#37352f',
+              border: '1px solid var(--notion-border)',
+              backgroundColor: rotation > 0 ? 'var(--notion-green-bg)' : 'var(--notion-bg)',
+              color: rotation > 0 ? '#16a34a' : 'var(--notion-text)',
               cursor: 'pointer'
             }}
           >
@@ -634,7 +634,7 @@ export const PdfDocViewer: React.FC<PdfDocViewerProps> = ({ url, title }) => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          backgroundColor: '#f7f7f5'
+          backgroundColor: 'var(--notion-sidebar)'
         }}
       >
         {loading && (

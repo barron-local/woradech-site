@@ -5,7 +5,6 @@ import {
   Menu,
   X,
   FileText,
-  BookOpen,
   User,
   Phone,
   Mail,
@@ -16,11 +15,16 @@ import {
   Home,
   ArrowUpRight,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Sun,
+  Moon,
+  BookOpen
 } from 'lucide-react';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
 import { PdfDocViewer } from './PdfDocViewer';
 import { NavbarSearch } from './NavbarSearch';
+import Lanyard from './Lanyard';
+
 
 export type PageRoute = 'home' | 'about' | 'portfolio' | '404';
 
@@ -41,6 +45,25 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewingPdf, setViewingPdf] = useState<{ url: string; title: string } | null>(null);
   const [isPdfFullscreen, setIsPdfFullscreen] = useState(false);
+
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('site-theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('site-theme', theme);
+  }, [theme]);
+
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   // Lock body scroll when modal is open so the background page does not scroll
   useEffect(() => {
@@ -68,7 +91,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#ffffff', color: '#37352f', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--notion-bg)', color: 'var(--notion-text)', display: 'flex', flexDirection: 'column', transition: 'background-color 0.25s ease, color 0.25s ease' }}>
 
       {/* 1. NAVIGATION BAR (Refined Minimalist Deluxe) */}
       <header
@@ -77,10 +100,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          backgroundColor: 'rgba(255, 255, 255, 0.85)',
           backdropFilter: 'blur(16px) saturate(180%)',
           WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 16px rgba(0, 0, 0, 0.02)',
           height: '56px',
           display: 'flex',
@@ -107,20 +128,20 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: '8px',
+              borderRadius: '50%',
               padding: '2px',
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--notion-bg)',
               boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
-              border: '1px solid rgba(0, 0, 0, 0.08)',
+              border: '1px solid var(--notion-border)',
               transition: 'transform 0.2s ease'
             }}>
               <img
-                src="/logo-tnk.jpg"
+                src="/logo-tnk-circle.png"
                 alt="Logo"
                 style={{
                   height: '28px',
                   width: '28px',
-                  borderRadius: '6px',
+                  borderRadius: '50%',
                   objectFit: 'cover',
                   display: 'block'
                 }}
@@ -169,8 +190,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   borderRadius: '7px',
                   fontWeight: currentPage === 'home' ? 600 : 500,
                   color: currentPage === 'home' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                  backgroundColor: currentPage === 'home' ? '#ffffff' : 'transparent',
-                  boxShadow: currentPage === 'home' ? '0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.03)' : 'none',
+                  backgroundColor: currentPage === 'home' ? 'var(--notion-bg)' : 'transparent',
+                  boxShadow: currentPage === 'home' ? '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.05)' : 'none',
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
@@ -186,8 +207,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   borderRadius: '7px',
                   fontWeight: currentPage === 'about' ? 600 : 500,
                   color: currentPage === 'about' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                  backgroundColor: currentPage === 'about' ? '#ffffff' : 'transparent',
-                  boxShadow: currentPage === 'about' ? '0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.03)' : 'none',
+                  backgroundColor: currentPage === 'about' ? 'var(--notion-bg)' : 'transparent',
+                  boxShadow: currentPage === 'about' ? '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.05)' : 'none',
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
@@ -203,8 +224,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   borderRadius: '7px',
                   fontWeight: currentPage === 'portfolio' ? 600 : 500,
                   color: currentPage === 'portfolio' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                  backgroundColor: currentPage === 'portfolio' ? '#ffffff' : 'transparent',
-                  boxShadow: currentPage === 'portfolio' ? '0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.03)' : 'none',
+                  backgroundColor: currentPage === 'portfolio' ? 'var(--notion-bg)' : 'transparent',
+                  boxShadow: currentPage === 'portfolio' ? '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.05)' : 'none',
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
@@ -212,7 +233,37 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               >
                 {config.navLinks.portfolio}
               </button>
+
             </nav>
+
+            {/* Dark Mode Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="notion-btn notion-btn-subtle theme-toggle-btn"
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                padding: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(0, 0, 0, 0.035)',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+                color: 'var(--notion-text)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flexShrink: 0
+              }}
+              title={theme === 'dark' ? 'เปลี่ยนเป็นโหมดสว่าง (Light Mode)' : 'เปลี่ยนเป็นโหมดมืด (Dark Mode)'}
+              aria-label="Toggle Dark Mode"
+            >
+              {theme === 'dark' ? (
+                <Sun size={17} style={{ color: '#f59e0b' }} />
+              ) : (
+                <Moon size={17} style={{ color: 'var(--notion-text)' }} />
+              )}
+            </button>
 
             {/* Mobile Toggle */}
             <button
@@ -240,23 +291,26 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
         {/* Mobile Drawer (Inside sticky header container with slide & blur) */}
         {mobileMenuOpen && (
-          <div style={{
-            position: 'absolute',
-            top: '56px',
-            left: 0,
-            right: 0,
-            backgroundColor: 'rgba(255, 255, 255, 0.96)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.1)',
-            padding: '12px 20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            zIndex: 100,
-            animation: 'fadeIn 0.15s ease'
-          }}>
+          <div
+            className="mobile-drawer"
+            style={{
+              position: 'absolute',
+              top: '56px',
+              left: 0,
+              right: 0,
+              backgroundColor: 'rgba(255, 255, 255, 0.96)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderBottom: '1px solid var(--notion-border)',
+              boxShadow: '0 12px 30px rgba(0, 0, 0, 0.15)',
+              padding: '12px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              zIndex: 100,
+              animation: 'fadeIn 0.15s ease'
+            }}
+          >
             <button
               onClick={() => handleNavClick('home')}
               style={{
@@ -311,6 +365,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             >
               {config.navLinks.portfolio}
             </button>
+
           </div>
         )}
       </header>
@@ -383,8 +438,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
           </div>
         )}
 
-        {/* ----------------- PAGE 2: ABOUT (แยกหน้า) ----------------- */}
-        {currentPage === 'about' && (
+        {/* ----------------- PAGE 2: ABOUT (แยกหน้า - คง State ไว้เพื่อให้เปิดได้ทันทีโดยไม่โหลดซ้ำ 0ms) ----------------- */}
+        <div style={{ display: currentPage === 'about' ? 'block' : 'none' }}>
           <section style={{ maxWidth: '960px', margin: '0 auto', padding: '48px 24px 80px' }}>
             <div style={{ marginBottom: '36px' }}>
               <h1 style={{ fontSize: '2.4rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
@@ -399,7 +454,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               alignItems: 'start'
             }} className="about-grid">
 
-              {/* Profile Card */}
+              {/* Profile Card (3D Lanyard Card & Backup of Original) */}
+              {/* BACKUP: หากต้องการย้อนกลับมาใช้รูปภาพแบบเดิม สามารถนำโค้ดด้านล่างนี้กลับมาใช้แทนได้:
               <div id="about-profile" className="notion-card search-scroll-target" style={{ padding: '24px', textAlign: 'center', position: 'sticky', top: '70px' }}>
                 <div style={{ width: '100%', height: '280px', borderRadius: 'var(--radius-xs)', overflow: 'hidden', marginBottom: '16px', border: '1px solid var(--notion-border)' }}>
                   <img
@@ -414,6 +470,25 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0', color: 'var(--notion-text)' }}>
                   นาย วรเดช พันธ์พืช
                 </h3>
+              </div>
+              */}
+
+              <div id="about-profile" className="notion-card search-scroll-target" style={{ padding: '12px', textAlign: 'center', position: 'sticky', top: '70px' }}>
+                <div style={{ width: '100%', height: '360px', borderRadius: 'var(--radius-xs)', overflow: 'hidden', position: 'relative', background: 'radial-gradient(circle at center, rgba(0,0,0,0.03) 0%, transparent 70%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Lanyard
+                    frontImage={config.about.avatarUrl || "/me.jpeg"}
+                    backImage={config.about.avatarUrl || "/me.jpeg"}
+                    imageFit="cover"
+                    cardColor="#ffffff"
+                    finish="glossy"
+                    metal="silver"
+                    size={0.68}
+                    strapLength={0.4}
+                    strapColor="#1e293b"
+                    interactive={true}
+                    intro={true}
+                  />
+                </div>
               </div>
 
               {/* Main Information Sections */}
@@ -455,7 +530,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                       <div style={{ fontSize: '0.82rem', color: 'var(--notion-text-muted)', marginBottom: '3px' }}>กำลังศึกษาอยู่ระดับชั้น</div>
                       <div style={{ fontSize: '0.96rem', fontWeight: 600, color: 'var(--notion-text)', lineHeight: 1.5 }}>
                         <div>ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส. 1)</div>
-                        <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--notion-text)' }}>แผนกเทคโนโลยีสารสนเทศ</div>
+                        <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--notion-text)' }}>แผนกวิชาเทคโนโลยีสารสนเทศ</div>
                       </div>
                     </div>
 
@@ -579,138 +654,41 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             {config.about.education && config.about.education.length > 0 && (
               <div id="about-education" className="search-scroll-target" style={{ marginTop: '64px', borderTop: '1px solid var(--notion-border)', paddingTop: '48px' }}>
                 {/* Section Header */}
-                <div style={{ marginBottom: '32px' }}>
+                <div style={{ marginBottom: '24px' }}>
                   <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0, letterSpacing: '-0.02em' }}>
                     ประวัติการศึกษา (Education)
                   </h2>
                 </div>
 
-                {/* Timeline Container */}
-                <div className="edu-timeline-track">
-                  {/* Continuous Vertical Timeline Spine */}
+                <div className="edu-timeline-track" style={{ marginTop: '16px' }}>
                   <div className="edu-timeline-spine" />
-
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     {config.about.education.map((edu, idx) => (
-                      <div
-                        key={edu.id || idx}
-                        id={`edu-${edu.id || idx}`}
-                        className="search-scroll-target"
-                        style={{ position: 'relative' }}
-                      >
-                        {/* Minimalist Timeline Node Dot */}
-                        <div
-                          className={`edu-timeline-minimal-dot ${edu.current ? 'is-current' : ''}`}
-                          title={edu.current ? 'กำลังศึกษาอยู่ (ปัจจุบัน)' : edu.degree}
-                        />
-
-                        {/* Education Card */}
-                        <div
-                          className={`edu-timeline-card edu-card ${edu.current ? 'is-current' : ''}`}
-                        >
-                          {/* Card Header: Degree Title (หัวข้อใหญ่) */}
-                          <div style={{
-                            marginBottom: '16px',
-                            paddingBottom: '12px',
-                            borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
-                          }}>
-                            <h3 style={{
-                              fontSize: '1.28rem',
-                              fontWeight: 700,
-                              color: 'var(--notion-text)',
-                              margin: 0,
-                              wordBreak: 'break-word',
-                              letterSpacing: '-0.015em'
-                            }}>
-                              {edu.degree}
-                            </h3>
+                      <div key={edu.id || idx} id={`edu-${edu.id || idx}`} style={{ position: 'relative' }}>
+                        <div className={`edu-timeline-minimal-dot ${edu.current ? 'is-current' : ''}`} />
+                        <div className={`edu-timeline-card edu-card ${edu.current ? 'is-current' : ''}`}>
+                          <div style={{ marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                            <h3 style={{ fontSize: '1.28rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>{edu.degree}</h3>
                           </div>
-
-                          {/* Card Body */}
                           <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }} className="edu-body-layout">
-                            {/* School Logo */}
-                            <div
-                              className="edu-logo-box"
-                              style={{
-                                width: '68px',
-                                height: '68px',
-                                minWidth: '68px',
-                                borderRadius: '14px',
-                                overflow: 'hidden',
-                                border: '1px solid rgba(0, 0, 0, 0.08)',
-                                backgroundColor: '#ffffff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                                padding: '4px',
-                                flexShrink: 0
-                              }}
-                            >
+                            <div className="edu-logo-box" style={{ width: '64px', height: '64px', minWidth: '64px', borderRadius: '50%', overflow: 'hidden', border: '1px solid var(--notion-border)', backgroundColor: 'var(--notion-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                               <img
                                 src={edu.logoUrl}
                                 alt={edu.institution}
-                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
                                 onError={(e) => {
-                                  (e.target as HTMLImageElement).src = "/logo-tnk.jpg";
+                                  (e.target as HTMLImageElement).src = "/logo-tnk-circle.png";
                                 }}
                               />
                             </div>
-
-                            {/* Info */}
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <h4 style={{
-                                fontSize: '1.18rem',
-                                fontWeight: 600,
-                                color: 'var(--notion-text)',
-                                margin: '0 0 3px 0',
-                                lineHeight: 1.35
-                              }}>
-                                {edu.institution}
-                              </h4>
-
-                              {edu.institutionEn && (
-                                <div style={{
-                                  fontSize: '0.86rem',
-                                  color: 'var(--notion-text-muted)',
-                                  marginBottom: edu.major ? '12px' : '0',
-                                  fontWeight: 400
-                                }}>
-                                  {edu.institutionEn}
-                                </div>
-                              )}
-
-                              {/* สาขาวิชา (Major / Field of Study) */}
+                              <h4 style={{ fontSize: '1.18rem', fontWeight: 600, color: 'var(--notion-text)', margin: '0 0 3px 0' }}>{edu.institution}</h4>
+                              {edu.institutionEn && <div style={{ fontSize: '0.86rem', color: 'var(--notion-text-muted)', marginBottom: edu.major ? '12px' : '0' }}>{edu.institutionEn}</div>}
                               {edu.major && (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
-                                  <div style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    fontSize: '0.85rem',
-                                    color: '#065f46',
-                                    fontWeight: 500,
-                                    backgroundColor: 'rgba(5, 150, 105, 0.06)',
-                                    padding: '5px 12px',
-                                    borderRadius: '8px',
-                                    border: '1px solid rgba(5, 150, 105, 0.16)'
-                                  }}>
-                                    <BookOpen size={13} color="#059669" style={{ flexShrink: 0 }} />
-                                    <span>{edu.major}</span>
-                                  </div>
+                                <div className="edu-major-pill">
+                                  <BookOpen size={13} />
+                                  <span>{edu.major === 'สาขา เทคโนโลยีสารสนเทศ' ? 'แผนกวิชาเทคโนโลยีสารสนเทศ' : edu.major}</span>
                                 </div>
-                              )}
-
-                              {/* Description (ถ้ามี) */}
-                              {edu.description && (
-                                <p style={{
-                                  fontSize: '0.875rem',
-                                  color: 'var(--notion-text-muted)',
-                                  margin: '12px 0 0',
-                                  lineHeight: 1.6
-                                }}>
-                                  {edu.description}
-                                </p>
                               )}
                             </div>
                           </div>
@@ -722,7 +700,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               </div>
             )}
           </section>
-        )}
+        </div>
 
         {/* ----------------- PAGE 3: PORTFOLIO (แยกหน้า) ----------------- */}
         {currentPage === 'portfolio' && (
@@ -812,9 +790,18 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
                   return groups.map((group, groupIdx) => {
                     const section = group.sectionItem;
-                    const bg = section?.sectionBg || '#f8fafc';
-                    const textColor = section?.sectionColor || '#1e293b';
-                    const borderColor = section?.sectionBorder || '#e2e8f0';
+                    const rawBg = section?.sectionBg;
+                    const rawColor = section?.sectionColor;
+                    const rawBorder = section?.sectionBorder;
+
+                    // Theme-aware fallback: if section has default light presets or light borders, adapt cleanly in Dark Mode
+                    const isDark = theme === 'dark';
+                    const bg = rawBg || (isDark ? 'var(--notion-sidebar)' : '#f8fafc');
+                    const textColor = rawColor || (isDark ? 'var(--notion-text)' : '#1e293b');
+                    
+                    // ในโหมด Dark เอา border ของป้ายกำกับหน่วยออกไปเลยทั้งหมด (border: 'none') เพื่อความเรียบเนียน ไม่ให้มีเส้นขอบใดๆ
+                    const finalBorder = isDark ? 'none' : `1.5px solid ${rawBorder || '#e2e8f0'}`;
+
                     const showBar = section?.sectionShowBar !== false;
                     const fontSize = section?.sectionFontSize || '1.32rem';
                     const align = section?.sectionAlign || 'left';
@@ -837,14 +824,14 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                             style={{
                               backgroundColor: bg,
                               color: textColor,
-                              border: `1.5px solid ${borderColor}`,
+                              border: finalBorder,
                               borderRadius: '12px',
                               padding: '16px 24px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: justifyContent,
                               textAlign: align,
-                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                               position: 'relative'
                             }}
                           >
@@ -924,7 +911,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                                   display: 'flex',
                                   flexDirection: 'column',
                                   justifyContent: 'space-between',
-                                  backgroundColor: '#ffffff'
+                                  backgroundColor: 'var(--notion-bg)'
                                 }}>
                                   <div>
                                     {/* Title with subtle category / format indicator */}
@@ -1010,6 +997,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             )}
           </section>
         )}
+
 
         {/* ----------------- PAGE 4: 404 NOT FOUND ----------------- */}
         {currentPage === '404' && (
@@ -1109,7 +1097,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
       {/* 4. FOOTER: ข้อมูลผู้จัดทำ */}
       <footer style={{
         borderTop: '1px solid var(--notion-border)',
-        backgroundColor: '#fbfbfa',
+        backgroundColor: 'var(--notion-sidebar)',
         padding: '36px 24px',
         textAlign: 'center'
       }}>
@@ -1132,8 +1120,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(15, 15, 15, 0.65)',
-            backdropFilter: 'blur(4px)',
+            backgroundColor: 'rgba(15, 15, 15, 0.75)',
+            backdropFilter: 'blur(6px)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
@@ -1147,7 +1135,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
         >
           <div
             style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--notion-bg)',
               borderRadius: isPdfFullscreen ? '0px' : 'var(--radius-md)',
               width: '100%',
               maxWidth: isPdfFullscreen ? '100vw' : '1080px',
@@ -1155,7 +1143,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               maxHeight: isPdfFullscreen ? '100vh' : '92vh',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
               border: isPdfFullscreen ? 'none' : '1px solid var(--notion-border)',
               overflow: 'hidden',
               transition: 'all 0.15s ease'
@@ -1169,7 +1157,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               justifyContent: 'space-between',
               padding: '10px 16px',
               borderBottom: '1px solid var(--notion-border)',
-              backgroundColor: '#fbfbfa'
+              backgroundColor: 'var(--notion-sidebar)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                 <FileText size={16} color="var(--notion-text)" />
@@ -1186,7 +1174,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                     padding: '4px 8px',
                     borderRadius: '4px',
                     border: '1px solid var(--notion-border)',
-                    background: '#ffffff',
+                    background: 'var(--notion-bg)',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -1206,7 +1194,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                     setIsPdfFullscreen(false);
                   }}
                   className="notion-btn"
-                  style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--notion-border)', background: '#ffffff', cursor: 'pointer' }}
+                  style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--notion-border)', background: 'var(--notion-bg)', color: 'var(--notion-text)', cursor: 'pointer' }}
                   title="ปิดหน้าต่าง (Esc)"
                 >
                   <X size={16} />
@@ -1215,7 +1203,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             </div>
 
             {/* Embedded Viewer (Supports Images and Full-featured PDF viewer) */}
-            <div style={{ flex: 1, width: '100%', height: '100%', backgroundColor: '#f7f7f5', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <div style={{ flex: 1, width: '100%', height: '100%', backgroundColor: 'var(--notion-sidebar)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               {viewingPdf.url.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(viewingPdf.url) ? (
                 <div style={{ width: '100%', height: '100%', overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                   <img

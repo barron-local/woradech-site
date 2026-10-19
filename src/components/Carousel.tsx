@@ -312,7 +312,7 @@ export const Carousel: React.FC<CarouselProps> = ({
               justifyContent: 'center',
               gap: '8px',
               padding: '12px',
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--notion-bg)',
               borderTop: '1px solid var(--notion-border)'
             }}
           >

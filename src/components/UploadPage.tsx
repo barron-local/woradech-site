@@ -700,6 +700,27 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                 />
               </div>
             </div>
+
+            <div>
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--notion-text)', display: 'block', marginBottom: '6px' }}>
+                สีเส้นขอบ (Border Color):
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="color"
+                  value={sectionBorder.startsWith('#') ? sectionBorder : '#bfdbfe'}
+                  onChange={(e) => setSectionBorder(e.target.value)}
+                  style={{ width: '40px', height: '36px', borderRadius: '6px', border: '1px solid #d1d5db', cursor: 'pointer', padding: '2px' }}
+                />
+                <input
+                  type="text"
+                  value={sectionBorder}
+                  onChange={(e) => setSectionBorder(e.target.value)}
+                  className="notion-input"
+                  style={{ fontSize: '0.85rem', padding: '6px 10px', width: '110px' }}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Bar Toggle, Font Size, and Alignment Options */}
@@ -1506,6 +1527,27 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                           type="text"
                           value={editSectionColor}
                           onChange={(e) => setEditSectionColor(e.target.value)}
+                          className="notion-input"
+                          style={{ fontSize: '0.82rem', padding: '4px 8px', width: '100px' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                        สีเส้นขอบ (Border Color):
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                          type="color"
+                          value={editSectionBorder.startsWith('#') ? editSectionBorder : '#bfdbfe'}
+                          onChange={(e) => setEditSectionBorder(e.target.value)}
+                          style={{ width: '36px', height: '32px', borderRadius: '4px', border: '1px solid #d1d5db', cursor: 'pointer', padding: '1px' }}
+                        />
+                        <input
+                          type="text"
+                          value={editSectionBorder}
+                          onChange={(e) => setEditSectionBorder(e.target.value)}
                           className="notion-input"
                           style={{ fontSize: '0.82rem', padding: '4px 8px', width: '100px' }}
                         />

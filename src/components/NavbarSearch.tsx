@@ -77,7 +77,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
     items.push({
       id: 'page-about',
       title: 'เกี่ยวกับฉัน (About Me)',
-      subtitle: 'ข้อมูลส่วนตัว ประวัติ วรเดช พันธ์พืช',
+      subtitle: 'ข้อมูลส่วนตัว ประวัติการศึกษา',
       badge: 'หน้า',
       badgeColor: { bg: '#f4f4f5', text: '#3f3f46', border: '#e4e4e7' },
       categoryType: 'page',
@@ -345,15 +345,6 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           top: Math.max(0, offsetPosition),
           behavior: 'smooth'
         });
-
-        // Trigger pulse highlight animation
-        targetEl.classList.remove('search-pulse-highlight');
-        void targetEl.offsetWidth; // Force CSS reflow
-        targetEl.classList.add('search-pulse-highlight');
-
-        setTimeout(() => {
-          targetEl.classList.remove('search-pulse-highlight');
-        }, 2500);
       } else {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -447,9 +438,9 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          backgroundColor: isOpen ? '#ffffff' : 'rgba(0, 0, 0, 0.035)',
-          border: isOpen ? '1px solid #2563eb' : '1px solid rgba(0, 0, 0, 0.07)',
-          boxShadow: isOpen ? '0 0 0 3px rgba(37, 99, 235, 0.12), 0 2px 8px rgba(37, 99, 235, 0.06)' : 'none',
+          backgroundColor: isOpen ? 'var(--notion-bg)' : 'rgba(0, 0, 0, 0.035)',
+          border: isOpen ? '1px solid #2563eb' : '1px solid var(--notion-border)',
+          boxShadow: isOpen ? '0 0 0 3px rgba(37, 99, 235, 0.15), 0 2px 8px rgba(37, 99, 235, 0.06)' : 'none',
           borderRadius: '9999px',
           padding: '5px 12px',
           width: isOpen ? '230px' : '170px',
@@ -459,7 +450,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
         }}
         className="navbar-search-bar"
       >
-        <Search size={14} style={{ color: isOpen ? '#2563eb' : '#71717a', flexShrink: 0, transition: 'color 0.15s ease' }} />
+        <Search size={14} style={{ color: isOpen ? '#2563eb' : 'var(--notion-text-muted)', flexShrink: 0, transition: 'color 0.15s ease' }} />
         <input
           ref={inputRef}
           type="text"
@@ -476,7 +467,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
             background: 'transparent',
             outline: 'none',
             fontSize: '0.82rem',
-            color: '#18181b',
+            color: 'var(--notion-text)',
             width: '100%',
             padding: 0
           }}
@@ -582,7 +573,8 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
                           width: '28px',
                           height: '28px',
                           borderRadius: '6px',
-                          backgroundColor: '#f4f4f5',
+                          backgroundColor: 'var(--notion-sidebar)',
+                          border: '1px solid var(--notion-border)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -598,7 +590,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
                           style={{
                             fontSize: '0.86rem',
                             fontWeight: 600,
-                            color: '#18181b',
+                            color: 'var(--notion-text)',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -624,19 +616,21 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
 
                     {/* Right Badge & Enter indicator */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 600,
-                          padding: '2px 7px',
-                          borderRadius: '4px',
-                          backgroundColor: item.badgeColor.bg,
-                          color: item.badgeColor.text,
-                          border: `1px solid ${item.badgeColor.border}`
-                        }}
-                      >
-                        {item.badge}
-                      </span>
+                      {item.categoryType !== 'unit' && item.categoryType !== 'page' && item.badge && (
+                        <span
+                          style={{
+                            fontSize: '0.68rem',
+                            fontWeight: 600,
+                            padding: '2px 7px',
+                            borderRadius: '4px',
+                            backgroundColor: item.badgeColor.bg,
+                            color: item.badgeColor.text,
+                            border: `1px solid ${item.badgeColor.border}`
+                          }}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
                       {isSelected && (
                         <CornerDownLeft size={13} style={{ color: '#2563eb', opacity: 0.8 }} />
                       )}
