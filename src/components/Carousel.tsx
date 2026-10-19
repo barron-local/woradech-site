@@ -171,13 +171,14 @@ export const Carousel: React.FC<CarouselProps> = ({
               key={idx}
               onClick={() => setCurrentIndex(idx)}
               style={{
-                width: idx === currentIndex ? '24px' : '8px',
+                width: '8px',
                 height: '8px',
-                borderRadius: '4px',
+                borderRadius: '50%',
                 background: idx === currentIndex ? 'var(--notion-text)' : 'var(--notion-border-dark)',
                 border: 'none',
+                padding: 0,
                 cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                transition: 'background 0.2s ease, opacity 0.2s ease'
               }}
               aria-label={`Go to slide ${idx + 1}`}
             />
