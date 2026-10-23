@@ -126,7 +126,7 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
                 height: '100%',
                 border: 'none',
                 pointerEvents: 'none', // Prevents capturing card click events
-                transform: 'scale(1.05)', // fills card nicely for landscape / presentation mode
+                transform: 'scale(1.18)', // Zooms slide content to fill the card neatly
                 transformOrigin: 'center center',
                 opacity: canvaLoaded ? 1 : 0,
                 transition: 'opacity 0.15s ease'
