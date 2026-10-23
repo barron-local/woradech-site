@@ -108,10 +108,11 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
           <div
             style={{
               position: 'absolute',
-              top: '-10px',
-              left: '-10px',
-              right: '-10px',
-              bottom: '-52px', // Extends iframe downwards so bottom toolbar is hidden regardless of aspect ratio
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '100%',
+              height: 'calc(100% + 56px)', // Extra height to push bottom controls below clipping mask
               overflow: 'hidden'
             }}
           >
@@ -126,8 +127,7 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
                 height: '100%',
                 border: 'none',
                 pointerEvents: 'none', // Prevents capturing card click events
-                transform: 'scale(1.18)', // Zooms slide content to fill the card neatly
-                transformOrigin: 'center center',
+                objectFit: 'cover',
                 opacity: canvaLoaded ? 1 : 0,
                 transition: 'opacity 0.15s ease'
               }}
