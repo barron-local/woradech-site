@@ -105,21 +105,34 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
         )}
 
         {embedSrc ? (
-          <iframe
-            src={embedSrc}
-            title={title}
-            loading="eager"
-            allow="fullscreen; autoplay"
-            onLoad={() => setCanvaLoaded(true)}
+          <div
             style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              pointerEvents: 'none', // Prevents capturing card click events
-              opacity: canvaLoaded ? 1 : 0,
-              transition: 'opacity 0.15s ease'
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              backgroundColor: '#001430' // Match Canva canvas background
             }}
-          />
+          >
+            <iframe
+              src={embedSrc}
+              title={title}
+              loading="eager"
+              allow="fullscreen; autoplay"
+              onLoad={() => setCanvaLoaded(true)}
+              style={{
+                width: '100%',
+                height: 'calc(100% + 40px)',
+                marginTop: '-4px', // Align precisely to the slide stage area
+                border: 'none',
+                pointerEvents: 'none', // Prevents capturing card click events
+                opacity: canvaLoaded ? 1 : 0,
+                transition: 'opacity 0.15s ease'
+              }}
+            />
+          </div>
         ) : (
           <div
             style={{
