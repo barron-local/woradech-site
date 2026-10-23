@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import type { PortfolioItem } from '../types';
-import { UploadCloud, FileText, CheckCircle2, Edit2, Trash2, ExternalLink, X, Save, AlertCircle, Image as ImageIcon, GripVertical, ChevronUp, ChevronDown, Bookmark, Palette } from 'lucide-react';
-import { uploadProjectToSupabase, updateProjectInSupabase, deleteProjectFromSupabase, createSectionInSupabase } from '../supabase';
+import { UploadCloud, FileText, CheckCircle2, Edit2, Trash2, ExternalLink, X, Save, AlertCircle, Image as ImageIcon, GripVertical, ChevronUp, ChevronDown, Bookmark, Palette, Link as LinkIcon, Presentation } from 'lucide-react';
+import { uploadProjectToSupabase, updateProjectInSupabase, deleteProjectFromSupabase, createSectionInSupabase, createLinkProjectInSupabase } from '../supabase';
 import { renderPdfFirstPageToImage } from '../utils/pdfThumbnail';
+import { isCanvaUrl, toCanvaEmbedUrl } from '../utils/embedHelper';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
 
 interface UploadPageProps {
@@ -34,8 +35,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   onReorderProjects,
   onNavigateToPortfolio
 }) => {
-  // Mode toggle: 'project' (อัปโหลดงาน) vs 'section' (เพิ่มป้ายกำกับหน่วย)
-  const [activeTab, setActiveTab] = useState<'project' | 'section'>('project');
+  // Mode toggle: 'project' (อัปโหลดไฟล์) vs 'link' (เพิ่มลิงก์ Canva/เว็บ) vs 'section' (เพิ่มป้ายกำกับหน่วย)
+  const [activeTab, setActiveTab] = useState<'project' | 'link' | 'section'>('project');
 
   // Local state for instantaneous UI updates when reordering
   const [localItems, setLocalItems] = useState<PortfolioItem[]>(projects);
@@ -48,6 +49,13 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   // Drag and Drop & Reordering State
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Form State for Link Project (Canva / Presentation / Web Link)
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkTitle, setLinkTitle] = useState('');
+  const [linkDescription, setLinkDescription] = useState('');
+  const [isAddingLink, setIsAddingLink] = useState(false);
+  const [linkError, setLinkError] = useState('');
 
   // Form State for New Upload (Project)
   const [title, setTitle] = useState('');
@@ -69,6 +77,9 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   const [isAddingSection, setIsAddingSection] = useState(false);
   const [sectionSuccess, setSectionSuccess] = useState(false);
   const [sectionError, setSectionError] = useState('');
+
+  // Edit Link State
+  const [editLinkUrl, setEditLinkUrl] = useState('');
 
   // Edit Modal State
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
@@ -191,6 +202,51 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     }
   };
 
+  // Handler for adding a link project (Canva / Presentation / Web Link)
+  const handleCreateLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkUrl.trim()) {
+      setLinkError('กรุณากรอกลิงก์ผลงาน เช่น https://canva.link/... หรือ https://www.canva.com/design/...');
+      return;
+    }
+    if (!linkTitle.trim()) {
+      setLinkError('กรุณาระบุชื่องาน / หัวข้อผลงาน');
+      return;
+    }
+
+    setIsAddingLink(true);
+    setLinkError('');
+
+    const raw = linkUrl.trim();
+    const isCanva = isCanvaUrl(raw);
+    const categoryName = isCanva ? 'Canva Presentation' : 'Web Link';
+    const embedUrl = isCanva ? toCanvaEmbedUrl(raw) : raw;
+
+    try {
+      const res = await createLinkProjectInSupabase({
+        title: linkTitle.trim(),
+        linkUrl: embedUrl,
+        category: categoryName,
+        description: linkDescription.trim(),
+        imageUrl: isCanva ? 'https://static.canva.com/web/images/12468613e04e432a2612.png' : ''
+      });
+
+      if (res.success && res.item) {
+        onAddProject(res.item);
+        setIsSuccess(true);
+        setLinkUrl('');
+        setLinkTitle('');
+        setLinkDescription('');
+      } else {
+        setLinkError(res.error || 'เกิดข้อผิดพลาดในการบันทึกลิงก์');
+      }
+    } catch (err: any) {
+      setLinkError(err.message || 'เกิดข้อผิดพลาดในการบันทึกลิงก์');
+    } finally {
+      setIsAddingLink(false);
+    }
+  };
+
   // Handler for adding a new section banner
   const handleCreateSection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,6 +287,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     setEditingItem(item);
     setEditTitle(item.title);
     setEditDescription(item.description || '');
+    setEditLinkUrl(item.pdfUrl || item.link || '');
     setEditSectionBg(item.sectionBg || '#f3f4f6');
     setEditSectionColor(item.sectionColor || '#1f2937');
     setEditSectionBorder(item.sectionBorder || '#e5e7eb');
@@ -302,15 +359,19 @@ export const UploadPage: React.FC<UploadPageProps> = ({
         return;
       }
 
-      // Normal project item
+      // Normal project or link item
+      const isLinkItem = !editingItem.fileName || editingItem.fileName === 'Canva Presentation' || editingItem.fileName === 'External Link' || (editingItem.pdfUrl && !editingItem.pdfUrl.includes('portfolio-docs') && !editingItem.pdfUrl.endsWith('.pdf'));
+      const finalLinkUrl = isLinkItem && editLinkUrl.trim() ? (isCanvaUrl(editLinkUrl.trim()) ? toCanvaEmbedUrl(editLinkUrl.trim()) : editLinkUrl.trim()) : undefined;
+
       const res = await updateProjectInSupabase({
         id: editingItem.id,
         title: editTitle.trim(),
         description: editDescription.trim(),
+        linkUrl: finalLinkUrl,
         newFile: editNewFile
       });
 
-      let updatedPdfUrl = editingItem.pdfUrl;
+      let updatedPdfUrl = finalLinkUrl || editingItem.pdfUrl;
       let updatedFileName = editingItem.fileName;
 
       if (editNewFile) {
@@ -478,57 +539,92 @@ export const UploadPage: React.FC<UploadPageProps> = ({
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        marginBottom: '20px',
+        gap: '6px',
+        marginBottom: '24px',
         backgroundColor: '#f3f4f6',
-        padding: '4px',
-        borderRadius: '8px',
-        width: 'fit-content'
+        padding: '5px',
+        borderRadius: '10px',
+        width: '100%',
+        maxWidth: '100%',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch'
       }}>
         <button
           type="button"
           onClick={() => setActiveTab('project')}
           style={{
+            flex: '1 0 auto',
             display: 'inline-flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: '8px',
-            padding: '8px 16px',
-            borderRadius: '6px',
+            padding: '9px 16px',
+            borderRadius: '7px',
             border: 'none',
             fontSize: '0.88rem',
             fontWeight: 600,
+            whiteSpace: 'nowrap',
             cursor: 'pointer',
             backgroundColor: activeTab === 'project' ? '#ffffff' : 'transparent',
             color: activeTab === 'project' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-            boxShadow: activeTab === 'project' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            boxShadow: activeTab === 'project' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
             transition: 'all 0.15s ease'
           }}
         >
           <UploadCloud size={16} />
-          <span>อัปโหลดผลงาน (PDF / รูปภาพ)</span>
+          <span>อัปโหลดไฟล์ (PDF / รูปภาพ)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('link')}
+          style={{
+            flex: '1 0 auto',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '9px 16px',
+            borderRadius: '7px',
+            border: 'none',
+            fontSize: '0.88rem',
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+            cursor: 'pointer',
+            backgroundColor: activeTab === 'link' ? '#ffffff' : 'transparent',
+            color: activeTab === 'link' ? '#7c3aed' : 'var(--notion-text-muted)',
+            boxShadow: activeTab === 'link' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Presentation size={16} color="#7c3aed" />
+          <span>เพิ่มลิงก์งาน (Canva / สไลด์)</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('section')}
           style={{
+            flex: '1 0 auto',
             display: 'inline-flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: '8px',
-            padding: '8px 16px',
-            borderRadius: '6px',
+            padding: '9px 16px',
+            borderRadius: '7px',
             border: 'none',
             fontSize: '0.88rem',
             fontWeight: 600,
+            whiteSpace: 'nowrap',
             cursor: 'pointer',
             backgroundColor: activeTab === 'section' ? '#ffffff' : 'transparent',
             color: activeTab === 'section' ? '#2563eb' : 'var(--notion-text-muted)',
-            boxShadow: activeTab === 'section' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            boxShadow: activeTab === 'section' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
             transition: 'all 0.15s ease'
           }}
         >
           <Bookmark size={16} />
-          <span>เพิ่มป้ายกำกับหน่วย (Section Header)</span>
+          <span>เพิ่มป้ายกำกับหน่วย (Section)</span>
         </button>
       </div>
 
@@ -560,7 +656,154 @@ export const UploadPage: React.FC<UploadPageProps> = ({
         </div>
       )}
 
-      {/* 1A. TAB: SECTION BANNER FORM */}
+      {/* 1A. TAB: LINK PROJECT FORM (Canva / Presentation / Web Link) */}
+      {activeTab === 'link' && (
+        <form onSubmit={handleCreateLink} style={{
+          background: '#ffffff',
+          border: '1.5px solid #ddd6fe',
+          borderRadius: 'var(--radius-sm)',
+          padding: '24px',
+          marginBottom: '40px',
+          boxShadow: '0 2px 8px rgba(124, 58, 237, 0.06)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+            <Presentation size={20} color="#7c3aed" />
+            <h2 style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
+              เพิ่มงานผ่านลิงก์ (Canva Presentation / สไลด์ / ลิงก์เว็บ)
+            </h2>
+          </div>
+
+          {linkError && (
+            <div style={{
+              padding: '10px 14px',
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#dc2626',
+              borderRadius: 'var(--radius-xs)',
+              fontSize: '0.85rem',
+              marginBottom: '16px'
+            }}>
+              {linkError}
+            </div>
+          )}
+
+          {/* Link URL Input */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+              URL ลิงก์งาน (Canva / สไลด์ / เว็บไซต์): <span style={{ color: '#e03e3e' }}>*</span>
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="url"
+                value={linkUrl}
+                onChange={(e) => {
+                  setLinkUrl(e.target.value);
+                  if (linkError) setLinkError('');
+                }}
+                placeholder="วางลิงก์ เช่น https://canva.link/... หรือ https://www.canva.com/design/..."
+                className="notion-input"
+                style={{ fontSize: '0.92rem', padding: '10px 12px 10px 38px' }}
+                required
+              />
+              <LinkIcon size={16} color="#7c3aed" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            </div>
+            {isCanvaUrl(linkUrl) && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                backgroundColor: 'var(--notion-hover, #f7f6f3)',
+                border: '1px solid var(--notion-border, #e9e9e7)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                fontSize: '0.82rem',
+                color: 'var(--notion-text, #37352f)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '4px',
+                    backgroundColor: '#7c3aed',
+                    color: '#ffffff',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    flexShrink: 0
+                  }}>
+                    C
+                  </span>
+                  <span style={{ fontWeight: 500 }}>Canva Presentation</span>
+                  <span style={{ color: 'var(--notion-text-muted, #787774)', fontSize: '0.78rem' }}>
+                    · รองรับสไลด์แบบโต้ตอบ (Interactive Embed)
+                  </span>
+                </div>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.72rem',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  backgroundColor: '#f3e8ff',
+                  color: '#6b21a8',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap'
+                }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#9333ea' }} />
+                  Embed Ready
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Link Project Title */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+              ชื่องาน / หัวข้อผลงาน: <span style={{ color: '#e03e3e' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={linkTitle}
+              onChange={(e) => setLinkTitle(e.target.value)}
+              placeholder="เช่น สไลด์นำเสนอโครงงาน AI, รายงานนำเสนอ Canva ฯลฯ"
+              className="notion-input"
+              style={{ fontSize: '0.92rem', padding: '10px 12px' }}
+              required
+            />
+          </div>
+
+          {/* Description */}
+          <div style={{ marginBottom: '22px' }}>
+            <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+              คำอธิบายโดยย่อ:
+            </label>
+            <textarea
+              rows={3}
+              value={linkDescription}
+              onChange={(e) => setLinkDescription(e.target.value)}
+              placeholder="รายละเอียดของงานนำเสนอ เพื่อให้ผู้เข้าชมเข้าใจเนื้อหาเบื้องต้น..."
+              className="notion-textarea"
+            />
+          </div>
+
+          {/* Submit Link */}
+          <button
+            type="submit"
+            disabled={isAddingLink}
+            className="notion-btn notion-btn-primary"
+            style={{ width: '100%', padding: '11px', fontSize: '0.92rem', fontWeight: 600, backgroundColor: '#7c3aed', borderColor: '#7c3aed', opacity: isAddingLink ? 0.7 : 1 }}
+          >
+            {isAddingLink ? 'กำลังบันทึกลิงก์...' : '+ บันทึกและแสดงงาน Canva / ลิงก์บน Portfolio'}
+          </button>
+        </form>
+      )}
+
+      {/* 1B. TAB: SECTION BANNER FORM */}
       {activeTab === 'section' && (
         <form onSubmit={handleCreateSection} style={{
           background: '#ffffff',
@@ -893,7 +1136,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           boxShadow: '0 2px 8px rgba(15, 15, 15, 0.04)'
         }}>
           <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--notion-text)', marginBottom: '18px' }}>
-            + อัปโหลดผลงานใหม่ (PDF หรือ รูปภาพ)
+            อัปโหลดผลงานใหม่ (PDF หรือ รูปภาพ)
           </h2>
 
           {errorMessage && (
@@ -1725,6 +1968,23 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                       className="notion-textarea"
                     />
                   </div>
+
+                  {/* If item is a Link / Canva Presentation, show Link URL field */}
+                  {(!editingItem.fileName || editingItem.fileName === 'Canva Presentation' || editingItem.fileName === 'External Link' || (editingItem.pdfUrl && !editingItem.pdfUrl.includes('portfolio-docs') && !editingItem.pdfUrl.endsWith('.pdf'))) && (
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                        URL ลิงก์งาน (Canva / สไลด์ / เว็บ):
+                      </label>
+                      <input
+                        type="url"
+                        value={editLinkUrl}
+                        onChange={(e) => setEditLinkUrl(e.target.value)}
+                        placeholder="https://canva.link/... หรือ https://www.canva.com/..."
+                        className="notion-input"
+                        style={{ fontSize: '0.9rem', padding: '9px 12px' }}
+                      />
+                    </div>
+                  )}
 
                   {/* Replace PDF or Image (Optional) */}
                   <div style={{ marginBottom: '22px' }}>

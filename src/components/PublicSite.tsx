@@ -18,12 +18,14 @@ import {
   Minimize2,
   Sun,
   Moon,
-  BookOpen
+  BookOpen,
+  ExternalLink
 } from 'lucide-react';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
 import { PdfDocViewer } from './PdfDocViewer';
 import { NavbarSearch } from './NavbarSearch';
 import Lanyard from './Lanyard';
+import { isCanvaUrl, toCanvaEmbedUrl } from '../utils/embedHelper';
 
 
 export type PageRoute = 'home' | 'about' | 'portfolio' | '404';
@@ -497,7 +499,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
               {/* Main Information Sections */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-                
+
                 {/* 1. ประวัติส่วนตัว */}
                 <div id="about-bio" className="notion-card search-scroll-target" style={{ padding: '28px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--notion-border)', paddingBottom: '12px' }}>
@@ -638,7 +640,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                         <span className="notion-tag" style={{ fontSize: '0.75rem' }}>อายุ 42 ปี</span>
                       </div>
                       <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--notion-text)', marginBottom: '8px' }}>
-                        นาง สุรางคนา ชูวาลา
+                        นาง สุรางคนา พันธ์พืช
                       </div>
                       <div style={{ fontSize: '0.88rem', color: 'var(--notion-text-muted)', marginBottom: '6px' }}>
                         อาชีพ: <strong style={{ color: 'var(--notion-text)' }}>รับจ้างทั่วไป</strong>
@@ -802,7 +804,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                     const isDark = theme === 'dark';
                     const bg = rawBg || (isDark ? 'var(--notion-sidebar)' : '#f8fafc');
                     const textColor = rawColor || (isDark ? 'var(--notion-text)' : '#1e293b');
-                    
+
                     // ในโหมด Dark เอา border ของป้ายกำกับหน่วยออกไปเลยทั้งหมด (border: 'none') เพื่อความเรียบเนียน ไม่ให้มีเส้นขอบใดๆ
                     const finalBorder = isDark ? 'none' : `1.5px solid ${rawBorder || '#e2e8f0'}`;
 
@@ -1170,6 +1172,29 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <a
+                  href={viewingPdf.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="notion-btn"
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid var(--notion-border)',
+                    background: 'var(--notion-bg)',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.78rem',
+                    color: '#2563eb',
+                    textDecoration: 'none'
+                  }}
+                  title="เปิดในแท็บใหม่"
+                >
+                  <ExternalLink size={13} />
+                  <span>เปิดลิงก์</span>
+                </a>
                 <button
                   type="button"
                   onClick={() => setIsPdfFullscreen(!isPdfFullscreen)}
@@ -1206,9 +1231,23 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               </div>
             </div>
 
-            {/* Embedded Viewer (Supports Images and Full-featured PDF viewer) */}
-            <div style={{ flex: 1, width: '100%', height: '100%', backgroundColor: 'var(--notion-sidebar)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              {viewingPdf.url.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(viewingPdf.url) ? (
+            {/* Embedded Viewer (Supports Images, Canva Presentation Embeds, and Full-featured PDF viewer) */}
+            <div style={{ flex: 1, width: '100%', height: '100%', backgroundColor: 'var(--notion-sidebar)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+              {isCanvaUrl(viewingPdf.url) ? (
+                <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#000000' }}>
+                  <iframe
+                    src={toCanvaEmbedUrl(viewingPdf.url)}
+                    title={viewingPdf.title || "Canva Presentation"}
+                    allow="fullscreen; autoplay"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                      flex: 1
+                    }}
+                  />
+                </div>
+              ) : (viewingPdf.url.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(viewingPdf.url)) ? (
                 <div style={{ width: '100%', height: '100%', overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                   <img
                     src={viewingPdf.url}

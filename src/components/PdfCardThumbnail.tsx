@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, ExternalLink, Presentation } from 'lucide-react';
 import { renderPdfFirstPageToImage } from '../utils/pdfThumbnail';
+import { isCanvaUrl, toCanvaEmbedUrl } from '../utils/embedHelper';
 
 interface PdfCardThumbnailProps {
   imageUrl?: string;
@@ -16,6 +17,10 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
   const [renderedThumb, setRenderedThumb] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
+  const [canvaLoaded, setCanvaLoaded] = useState<boolean>(false);
+
+  const isCanva = isCanvaUrl(pdfUrl) || isCanvaUrl(imageUrl);
+  const isGenericLink = !!pdfUrl && !pdfUrl.includes('portfolio-docs') && !pdfUrl.endsWith('.pdf') && !pdfUrl.startsWith('data:');
 
   const isUnsplashDefault = !imageUrl || imageUrl.includes('unsplash.com');
   const hasValidPdf = !!pdfUrl && (pdfUrl.includes('.pdf') || pdfUrl.startsWith('data:application/pdf') || pdfUrl.includes('portfolio-docs'));
@@ -60,6 +65,145 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
         }}
         onError={() => setHasError(true)}
       />
+    );
+  }
+
+  // Canva Presentation Live Slide / Thumbnail Preview
+  if (isCanva) {
+    const embedSrc = toCanvaEmbedUrl(pdfUrl || imageUrl || '');
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+          backgroundColor: '#18191b',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Placeholder / Skeleton preview while Canva is bootstrapping */}
+        {!canvaLoaded && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(135deg, rgba(0, 196, 204, 0.15) 0%, rgba(125, 42, 232, 0.2) 100%)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1,
+              transition: 'opacity 0.3s ease'
+            }}
+          >
+            <div
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '8px'
+              }}
+            >
+              <Presentation size={22} color="#a855f7" />
+            </div>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>
+              กำลังโหลดสไลด์...
+            </span>
+          </div>
+        )}
+
+        {embedSrc ? (
+          <div
+            style={{
+              position: 'absolute',
+              top: '-10px',
+              left: '-10px',
+              right: '-10px',
+              bottom: '-52px', // Extends iframe downwards so bottom toolbar is hidden regardless of aspect ratio
+              overflow: 'hidden'
+            }}
+          >
+            <iframe
+              src={embedSrc}
+              title={title}
+              loading="lazy"
+              allow="fullscreen; autoplay"
+              onLoad={() => setCanvaLoaded(true)}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
+                pointerEvents: 'none', // Prevents capturing card click events
+                transform: 'scale(1.05)', // fills card nicely for landscape / presentation mode
+                transformOrigin: 'center center',
+                opacity: canvaLoaded ? 1 : 0,
+                transition: 'opacity 0.25s ease'
+              }}
+            />
+          </div>
+        ) : (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              background: 'linear-gradient(135deg, #00c4cc 0%, #7d2ae8 100%)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              color: '#ffffff'
+            }}
+          >
+            <Presentation size={32} color="#ffffff" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Generic External Link Badge
+  if (isGenericLink && !hasValidPdf) {
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          color: '#1e40af',
+          position: 'relative',
+          userSelect: 'none'
+        }}
+      >
+        <div
+          style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '14px',
+            backgroundColor: '#ffffff',
+            border: '1px solid #bfdbfe',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(30, 64, 175, 0.08)',
+            marginBottom: '8px'
+          }}
+        >
+          <ExternalLink size={26} color="#2563eb" />
+        </div>
+        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e40af' }}>
+          Web Link
+        </span>
+      </div>
     );
   }
 

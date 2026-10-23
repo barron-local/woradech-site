@@ -238,6 +238,93 @@ export async function uploadProjectToSupabase(params: {
   }
 }
 
+// Create Link / Presentation Project (e.g. Canva, Google Slides, Figma, Web Link)
+export async function createLinkProjectInSupabase(params: {
+  title: string;
+  linkUrl: string;
+  category?: string;
+  description?: string;
+  imageUrl?: string;
+}): Promise<{ success: boolean; item?: PortfolioItem; error?: string }> {
+  const supabase = getSupabaseClient();
+  const rawUrl = params.linkUrl.trim();
+  const isCanva = /canva\.(com|link)/i.test(rawUrl);
+  const defaultCategory = params.category || (isCanva ? 'Canva Presentation' : 'Web Link');
+
+  // If Canva, set an attractive Canva icon/thumbnail badge if no custom image is provided
+  const coverImage = params.imageUrl || (isCanva ? 'https://static.canva.com/web/images/12468613e04e432a2612.png' : '');
+
+  if (!supabase) {
+    const fallbackItem: PortfolioItem = {
+      id: `link-${Date.now()}`,
+      title: params.title.trim(),
+      category: defaultCategory,
+      description: params.description?.trim() || '',
+      imageUrl: coverImage,
+      pdfUrl: rawUrl,
+      fileName: isCanva ? 'Canva Presentation' : 'External Link',
+      link: rawUrl,
+      tags: [isCanva ? 'Canva' : 'Link', 'Presentation'],
+      createdAt: new Date().toISOString(),
+      itemType: 'project'
+    };
+    return { success: true, item: fallbackItem };
+  }
+
+  try {
+    const { data: inserted, error: insertError } = await supabase
+      .from('projects')
+      .insert([
+        {
+          title: params.title.trim(),
+          category: defaultCategory,
+          description: params.description?.trim() || '',
+          file_name: isCanva ? 'Canva Presentation' : 'External Link',
+          pdf_url: rawUrl,
+          image_url: coverImage
+        }
+      ])
+      .select()
+      .single();
+
+    if (insertError) {
+      console.warn('Database insert link note:', insertError.message);
+      const fallbackItem: PortfolioItem = {
+        id: `link-${Date.now()}`,
+        title: params.title.trim(),
+        category: defaultCategory,
+        description: params.description?.trim() || '',
+        imageUrl: coverImage,
+        pdfUrl: rawUrl,
+        fileName: isCanva ? 'Canva Presentation' : 'External Link',
+        link: rawUrl,
+        tags: [isCanva ? 'Canva' : 'Link', 'Presentation'],
+        createdAt: new Date().toISOString(),
+        itemType: 'project'
+      };
+      return { success: true, item: fallbackItem };
+    }
+
+    const newItem: PortfolioItem = {
+      id: inserted.id,
+      title: inserted.title,
+      category: inserted.category || defaultCategory,
+      description: inserted.description,
+      imageUrl: inserted.image_url || coverImage,
+      pdfUrl: inserted.pdf_url,
+      fileName: inserted.file_name,
+      link: inserted.pdf_url,
+      tags: [isCanva ? 'Canva' : 'Link', 'Presentation'],
+      createdAt: inserted.created_at || new Date().toISOString(),
+      itemType: 'project'
+    };
+
+    return { success: true, item: newItem };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'เกิดข้อผิดพลาดในการบันทึกลิงก์' };
+  }
+}
+
 export async function createSectionInSupabase(params: {
   title: string;
   sectionBg: string;
@@ -352,12 +439,12 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-// Update an existing project in Supabase
 export async function updateProjectInSupabase(params: {
   id: string;
   title: string;
   description?: string;
   category?: string;
+  linkUrl?: string;
   newFile?: File | null;
 }): Promise<{ success: boolean; item?: PortfolioItem; error?: string }> {
   const supabase = getSupabaseClient();
@@ -371,6 +458,14 @@ export async function updateProjectInSupabase(params: {
       description: params.description?.trim() || '',
       category: params.category || 'PDF Document'
     };
+
+    if (params.linkUrl !== undefined) {
+      updatePayload.pdf_url = params.linkUrl.trim();
+      if (/canva\.(com|link)/i.test(params.linkUrl)) {
+        updatePayload.category = 'Canva Presentation';
+        updatePayload.file_name = 'Canva Presentation';
+      }
+    }
 
     if (params.newFile) {
       const fileExt = (params.newFile.name.split('.').pop() || '').toLowerCase();
