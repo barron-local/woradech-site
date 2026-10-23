@@ -50,25 +50,7 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
     }
   }, [imageUrl, pdfUrl, isUnsplashDefault, hasValidPdf]);
 
-  const displaySrc = renderedThumb || (imageUrl && !isUnsplashDefault ? imageUrl : null);
-
-  if (displaySrc && !hasError) {
-    return (
-      <img
-        src={displaySrc}
-        alt={title}
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          transition: 'transform 0.2s ease'
-        }}
-        onError={() => setHasError(true)}
-      />
-    );
-  }
-
-  // Canva Presentation Live Slide / Thumbnail Preview
+  // 1. Canva Presentation Live Slide / Thumbnail Preview (Prioritized so no broken image or placeholder flashes)
   if (isCanva) {
     const embedSrc = toCanvaEmbedUrl(pdfUrl || imageUrl || '');
     return (
@@ -77,7 +59,7 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
           width: '100%',
           height: '100%',
           position: 'relative',
-          backgroundColor: '#18191b',
+          backgroundColor: '#f9fafb',
           overflow: 'hidden'
         }}
       >
@@ -156,19 +138,38 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
             style={{
               width: '100%',
               height: '100%',
-              background: 'linear-gradient(135deg, #00c4cc 0%, #7d2ae8 100%)',
+              backgroundColor: '#f9fafb',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               padding: '20px',
-              color: '#ffffff'
+              color: '#6b7280'
             }}
           >
-            <Presentation size={32} color="#ffffff" />
+            <Presentation size={32} color="#6b7280" />
           </div>
         )}
       </div>
+    );
+  }
+
+  // 2. Normal Image / Rendered PDF first-page thumbnail
+  const displaySrc = renderedThumb || (imageUrl && !isUnsplashDefault ? imageUrl : null);
+
+  if (displaySrc && !hasError) {
+    return (
+      <img
+        src={displaySrc}
+        alt={title}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          transition: 'transform 0.2s ease'
+        }}
+        onError={() => setHasError(true)}
+      />
     );
   }
 
