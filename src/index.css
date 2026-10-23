@@ -427,6 +427,24 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ========================================================
+   SPINNER & LOADING ANIMATIONS
+   ======================================================== */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite !important;
+  transform-origin: center center;
+  display: inline-block;
+}
+
+/* ========================================================
    SEARCH SCROLL TARGET
    ======================================================== */
 .search-scroll-target {

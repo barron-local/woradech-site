@@ -294,19 +294,21 @@ const makeCanvasTexture = (canvas: HTMLCanvasElement, anisotropy: number) => {
 
 
 
-const drawFitted = (ctx: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, fit: string) => {
-  const scale = (fit === 'contain' ? Math.min : Math.max)(width / image.width, height / image.height);
+const drawFitted = (ctx: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, fit: string, padding = 0) => {
+  const availW = Math.max(1, width - padding * 2);
+  const availH = Math.max(1, height - padding * 2);
+  const scale = (fit === 'contain' ? Math.min : Math.max)(availW / image.width, availH / image.height);
   const w = image.width * scale;
   const h = image.height * scale;
   ctx.drawImage(image, (width - w) / 2, (height - h) / 2, w, h);
 };
 
-const paintFace = (canvas: HTMLCanvasElement, image: HTMLImageElement | null, color: [number, number, number], fit: string) => {
+const paintFace = (canvas: HTMLCanvasElement, image: HTMLImageElement | null, color: [number, number, number], fit: string, padding = 0) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   ctx.fillStyle = toCss(color);
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  if (image) drawFitted(ctx, image, canvas.width, canvas.height, fit);
+  if (image) drawFitted(ctx, image, canvas.width, canvas.height, fit, padding);
 };
 
 const paintStrap = (canvas: HTMLCanvasElement, image: HTMLImageElement | null, color: [number, number, number]) => {
@@ -583,7 +585,11 @@ export interface LanyardProps {
   frontImage?: string;
   backImage?: string;
   imageFit?: 'cover' | 'contain';
+  backImageFit?: 'cover' | 'contain';
+  padding?: number;
+  backPadding?: number;
   cardColor?: string;
+  backCardColor?: string;
   orientation?: 'portrait' | 'landscape';
   finish?: 'glossy' | 'matte' | 'holographic' | 'metallic';
   cornerRadius?: number;
@@ -608,7 +614,11 @@ const Lanyard: React.FC<LanyardProps> = ({
   frontImage,
   backImage,
   imageFit = 'cover',
+  backImageFit,
+  padding = 0,
+  backPadding = 0,
   cardColor = '#ffffff',
+  backCardColor,
   orientation = 'portrait',
   finish = 'glossy',
   cornerRadius = 0.3,
@@ -636,7 +646,11 @@ const Lanyard: React.FC<LanyardProps> = ({
     frontImage,
     backImage,
     imageFit: imageFit === 'contain' ? 'contain' : 'cover',
+    backImageFit: (backImageFit || imageFit) === 'contain' ? 'contain' : 'cover',
+    padding: Math.max(0, padding),
+    backPadding: Math.max(0, backPadding),
     cardColor,
+    backCardColor: backCardColor || cardColor,
     orientation: orientation === 'landscape' ? 'landscape' : 'portrait',
     finish,
     cornerRadius,
@@ -789,7 +803,8 @@ const Lanyard: React.FC<LanyardProps> = ({
 
     const paintFaces = () => {
       const s = settingsRef.current;
-      const color = parseColor(s.cardColor, [1, 1, 1]);
+      const frontColor = parseColor(s.cardColor, [1, 1, 1]);
+      const backColor = parseColor(s.backCardColor || s.cardColor, [1, 1, 1]);
       const width = FACE_WIDTH;
       const height = Math.round((FACE_WIDTH * layout.height) / layout.width);
       if (frontCanvas.width !== width || frontCanvas.height !== height) {
@@ -800,8 +815,8 @@ const Lanyard: React.FC<LanyardProps> = ({
         frontTexture.dispose();
         backTexture.dispose();
       }
-      paintFace(frontCanvas, images.front, color, s.imageFit);
-      paintFace(backCanvas, images.back || images.front, color, s.imageFit);
+      paintFace(frontCanvas, images.front, frontColor, s.imageFit, s.padding * FACE_WIDTH);
+      paintFace(backCanvas, images.back || images.front, backColor, s.backImageFit || s.imageFit, (s.backPadding || s.padding) * FACE_WIDTH);
       frontTexture.needsUpdate = true;
       backTexture.needsUpdate = true;
       start();
@@ -885,7 +900,7 @@ const Lanyard: React.FC<LanyardProps> = ({
           repaintStrap();
         });
       }
-      const faceKey = `${layoutKey}|${s.cardColor}|${s.imageFit}`;
+      const faceKey = `${layoutKey}|${s.cardColor}|${s.backCardColor}|${s.imageFit}|${s.backImageFit}|${s.padding}|${s.backPadding}`;
       if (faceKey !== applied.faceKey) paintFaces();
       if (s.strapColor !== applied.strapColor) repaintStrap();
 

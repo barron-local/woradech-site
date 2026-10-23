@@ -478,9 +478,12 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                 <div style={{ width: '100%', height: '360px', borderRadius: 'var(--radius-xs)', overflow: 'hidden', position: 'relative', background: 'radial-gradient(circle at center, rgba(0,0,0,0.03) 0%, transparent 70%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Lanyard
                     frontImage={config.about.avatarUrl || "/me.jpeg"}
-                    backImage={config.about.avatarUrl || "/me.jpeg"}
+                    backImage="/logo-tnk-circle.png"
                     imageFit="cover"
+                    backImageFit="contain"
+                    backPadding={0.13}
                     cardColor="#ffffff"
+                    backCardColor="#ffffff"
                     finish="glossy"
                     metal="silver"
                     size={0.68}
