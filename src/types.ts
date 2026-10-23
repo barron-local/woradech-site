@@ -19,6 +19,13 @@ export interface PortfolioItem {
   fileName?: string;
   createdAt?: string;
   itemType?: 'project' | 'section';
+  subItems?: Array<{
+    id?: string;
+    title: string;
+    url: string;
+    imageUrl?: string;
+    description?: string;
+  }>;
   sectionBg?: string;
   sectionColor?: string;
   sectionBorder?: string;

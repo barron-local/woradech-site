@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { PortfolioItem } from '../types';
-import { UploadCloud, FileText, CheckCircle2, Edit2, Trash2, ExternalLink, X, Save, AlertCircle, Image as ImageIcon, GripVertical, ChevronUp, ChevronDown, Bookmark, Palette, Link as LinkIcon, Presentation } from 'lucide-react';
-import { uploadProjectToSupabase, updateProjectInSupabase, deleteProjectFromSupabase, createSectionInSupabase, createLinkProjectInSupabase } from '../supabase';
+import { UploadCloud, FileText, CheckCircle2, Edit2, Trash2, ExternalLink, X, Save, AlertCircle, Image as ImageIcon, GripVertical, ChevronUp, ChevronDown, Bookmark, Palette, Link as LinkIcon, Presentation, FolderOpen, Loader2 } from 'lucide-react';
+import { uploadProjectToSupabase, updateProjectInSupabase, deleteProjectFromSupabase, createSectionInSupabase, createLinkProjectInSupabase, uploadAssetToSupabase } from '../supabase';
 import { renderPdfFirstPageToImage } from '../utils/pdfThumbnail';
 import { isCanvaUrl, toCanvaEmbedUrl } from '../utils/embedHelper';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
@@ -26,6 +26,19 @@ const SECTION_COLOR_PRESETS = [
   { name: 'ชมพู (Rose)', bg: '#fff1f2', text: '#9f1239', border: '#fecdd3' },
   { name: 'ดำคลาสสิก (Dark)', bg: '#1f2937', text: '#ffffff', border: '#374151' }
 ];
+
+// Helper to accurately determine if a portfolio item is a Canva/web link vs an uploaded file
+export const checkIsLinkItem = (item?: PortfolioItem | null): boolean => {
+  if (!item) return false;
+  if (item.category === 'Canva Presentation' || item.category === 'Web Link' || item.category === 'External Link' || item.category === 'Link') return true;
+  if (item.fileName === 'Canva Presentation' || item.fileName === 'Web Link' || item.fileName === 'External Link') return true;
+  const url = item.link || item.pdfUrl || '';
+  if (url.startsWith('data:')) return false;
+  if (isCanvaUrl(url)) return true;
+  if (item.fileName && item.fileName.trim().length > 0) return false;
+  if (/\.(pdf|jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(url)) return false;
+  return url.startsWith('http://') || url.startsWith('https://');
+};
 
 export const UploadPage: React.FC<UploadPageProps> = ({
   projects,
@@ -93,6 +106,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   const [editSectionAlign, setEditSectionAlign] = useState<'left' | 'center' | 'right'>('left');
   const [editNewFile, setEditNewFile] = useState<File | null>(null);
   const [editFileInfo, setEditFileInfo] = useState<{ name: string; size: string; isImage: boolean } | null>(null);
+  const [editSubItems, setEditSubItems] = useState<Array<{ id?: string; title: string; url: string; imageUrl?: string; description?: string }>>([]);
+  const [uploadingSubIndex, setUploadingSubIndex] = useState<number | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [editError, setEditError] = useState('');
 
@@ -287,7 +302,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     setEditingItem(item);
     setEditTitle(item.title);
     setEditDescription(item.description || '');
-    setEditLinkUrl(item.pdfUrl || item.link || '');
+    const isLink = checkIsLinkItem(item);
+    setEditLinkUrl(isLink ? (item.link || item.pdfUrl || '') : '');
     setEditSectionBg(item.sectionBg || '#f3f4f6');
     setEditSectionColor(item.sectionColor || '#1f2937');
     setEditSectionBorder(item.sectionBorder || '#e5e7eb');
@@ -296,6 +312,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     setEditSectionAlign(item.sectionAlign || 'left');
     setEditNewFile(null);
     setEditFileInfo(null);
+    setEditSubItems(item.subItems ? JSON.parse(JSON.stringify(item.subItems)) : []);
     setEditError('');
   };
 
@@ -360,15 +377,25 @@ export const UploadPage: React.FC<UploadPageProps> = ({
       }
 
       // Normal project or link item
-      const isLinkItem = !editingItem.fileName || editingItem.fileName === 'Canva Presentation' || editingItem.fileName === 'External Link' || (editingItem.pdfUrl && !editingItem.pdfUrl.includes('portfolio-docs') && !editingItem.pdfUrl.endsWith('.pdf'));
-      const finalLinkUrl = isLinkItem && editLinkUrl.trim() ? (isCanvaUrl(editLinkUrl.trim()) ? toCanvaEmbedUrl(editLinkUrl.trim()) : editLinkUrl.trim()) : undefined;
+      const isLinkItem = checkIsLinkItem(editingItem);
+      const finalLinkUrl = isLinkItem && editLinkUrl.trim() && !editLinkUrl.startsWith('data:') ? (isCanvaUrl(editLinkUrl.trim()) ? toCanvaEmbedUrl(editLinkUrl.trim()) : editLinkUrl.trim()) : undefined;
+
+      const validSubItems = editSubItems
+        .filter(s => s.url.trim() || s.title.trim())
+        .map(s => ({
+          title: s.title.trim() || 'ชิ้นงานย่อย',
+          url: s.url.trim(),
+          imageUrl: s.imageUrl?.trim() || (/\.(jpg|jpeg|png|webp|gif|svg)$/i.test(s.url.trim()) ? s.url.trim() : undefined),
+          description: s.description?.trim() || ''
+        }));
 
       const res = await updateProjectInSupabase({
         id: editingItem.id,
         title: editTitle.trim(),
         description: editDescription.trim(),
         linkUrl: finalLinkUrl,
-        newFile: editNewFile
+        newFile: editNewFile,
+        subItems: validSubItems
       });
 
       let updatedPdfUrl = finalLinkUrl || editingItem.pdfUrl;
@@ -409,7 +436,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           pdfUrl: finalUrl,
           fileName: editNewFile.name,
           link: finalUrl,
-          tags: [isImage ? 'Image' : 'PDF']
+          tags: [isImage ? 'Image' : 'PDF'],
+          subItems: validSubItems.length > 0 ? validSubItems : undefined
         };
         onUpdateProject(updatedItem);
       } else {
@@ -419,7 +447,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           description: editDescription.trim(),
           pdfUrl: res.item?.pdfUrl || updatedPdfUrl,
           fileName: res.item?.fileName || updatedFileName,
-          link: res.item?.link || editingItem.link
+          link: res.item?.link || editingItem.link,
+          subItems: validSubItems.length > 0 ? validSubItems : undefined
         };
         onUpdateProject(updatedItem);
       }
@@ -1970,7 +1999,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                   </div>
 
                   {/* If item is a Link / Canva Presentation, show Link URL field */}
-                  {(!editingItem.fileName || editingItem.fileName === 'Canva Presentation' || editingItem.fileName === 'External Link' || (editingItem.pdfUrl && !editingItem.pdfUrl.includes('portfolio-docs') && !editingItem.pdfUrl.endsWith('.pdf'))) && (
+                  {checkIsLinkItem(editingItem) && (
                     <div style={{ marginBottom: '20px' }}>
                       <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
                         URL ลิงก์งาน (Canva / สไลด์ / เว็บ):
@@ -1986,36 +2015,50 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                     </div>
                   )}
 
-                  {/* Replace PDF or Image (Optional) */}
-                  <div style={{ marginBottom: '22px' }}>
-                    <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
-                      เปลี่ยนไฟล์แนบ (PDF หรือ รูปภาพ หากต้องการ):
-                    </label>
+                  {/* Replace PDF or Image (Optional) - only for file-based items */}
+                  {!checkIsLinkItem(editingItem) && (
+                    <div style={{ marginBottom: '22px' }}>
+                      <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+                        เปลี่ยนไฟล์แนบ (PDF หรือ รูปภาพ หากต้องการ):
+                      </label>
 
-                    {/* Current Active File Badge */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '9px 12px',
-                      backgroundColor: '#f9fafb',
-                      border: '1px solid var(--notion-border)',
-                      borderRadius: '6px',
-                      marginBottom: '10px',
-                      fontSize: '0.83rem'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                        <span style={{ color: 'var(--notion-text-muted)', fontSize: '0.78rem', flexShrink: 0 }}>ไฟล์เดิม:</span>
-                        <FileText size={15} color="#dc2626" style={{ flexShrink: 0 }} />
-                        <strong style={{ color: 'var(--notion-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {editingItem.fileName || 'เอกสารแนบ'}
-                        </strong>
-                      </div>
+                      {/* Current Active File Badge */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '9px 12px',
+                        backgroundColor: '#f9fafb',
+                        border: '1px solid var(--notion-border)',
+                        borderRadius: '6px',
+                        marginBottom: '10px',
+                        fontSize: '0.83rem'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                          <span style={{ color: 'var(--notion-text-muted)', fontSize: '0.78rem', flexShrink: 0 }}>ไฟล์เดิม:</span>
+                          <FileText size={15} color="#dc2626" style={{ flexShrink: 0 }} />
+                          <strong style={{ color: 'var(--notion-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {editingItem.fileName || 'เอกสารแนบ'}
+                          </strong>
+                        </div>
                       {editingItem.pdfUrl && (
                         <a
                           href={editingItem.pdfUrl}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={(e) => {
+                            if (editingItem.pdfUrl?.startsWith('data:')) {
+                              e.preventDefault();
+                              const w = window.open('');
+                              if (w) {
+                                if (editingItem.pdfUrl.startsWith('data:image/')) {
+                                  w.document.write(`<img src="${editingItem.pdfUrl}" style="max-width:100%;height:auto;display:block;margin:auto;" />`);
+                                } else {
+                                  w.document.write(`<iframe src="${editingItem.pdfUrl}" style="border:none;width:100vw;height:100vh;"></iframe>`);
+                                }
+                              }
+                            }
+                          }}
                           style={{ color: '#2563eb', textDecoration: 'none', fontSize: '0.78rem', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                         >
                           <ExternalLink size={11} /> ดูไฟล์เดิม
@@ -2062,6 +2105,250 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                         style={{ display: 'none' }}
                       />
                     </label>
+                  </div>
+                  )}
+
+                  {/* 3D Folder / Multiple Sub-items Management */}
+                  <div style={{
+                    marginBottom: '22px',
+                    padding: '16px',
+                    borderRadius: '10px',
+                    border: '1px solid #bfdbfe',
+                    backgroundColor: '#eff6ff'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FolderOpen size={16} color="#2563eb" />
+                        <label style={{ fontSize: '0.88rem', fontWeight: 650, color: '#1e3a8a', margin: 0 }}>
+                          ชิ้นงานย่อยในแฟ้มนี้ (3D Folder Items):
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditSubItems(prev => [
+                            ...prev,
+                            { title: `ชิ้นงานที่ ${prev.length + 1}`, url: '', imageUrl: '' }
+                          ]);
+                        }}
+                        className="notion-btn"
+                        style={{
+                          fontSize: '0.78rem',
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          backgroundColor: '#2563eb',
+                          color: '#ffffff',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        + เพิ่มชิ้นงานย่อย
+                      </button>
+                    </div>
+
+                    <p style={{ fontSize: '0.76rem', color: '#3b82f6', margin: '0 0 12px 0', lineHeight: 1.4 }}>
+                      เมื่อมีผลงานย่อยตั้งแต่ 1 ชิ้นขึ้นไป ชิ้นงานนี้จะเปิดด้วยโฟลเดอร์ 3D แบบแอนิเมชันเปิดอ้าให้ผู้เข้าชมเลือกหยิบได้ทันที
+                    </p>
+
+                    {editSubItems.length === 0 ? (
+                      <div style={{
+                        padding: '14px',
+                        textAlign: 'center',
+                        fontSize: '0.82rem',
+                        color: 'var(--notion-text-muted)',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '8px',
+                        border: '1px dashed #cbd5e1'
+                      }}>
+                        ยังไม่มีชิ้นงานย่อย (คลิก <strong>"+ เพิ่มชิ้นงานย่อย"</strong> ด้านบนเพื่อใส่รูป/ลิงก์ผลงานย่อย)
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '240px', overflowY: 'auto', paddingRight: '4px' }}>
+                        {editSubItems.map((sub, sIdx) => (
+                          <div
+                            key={sIdx}
+                            style={{
+                              padding: '10px 12px',
+                              backgroundColor: '#ffffff',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '8px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#2563eb' }}>
+                                ชิ้นที่ #{sIdx + 1}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditSubItems(prev => prev.filter((_, i) => i !== sIdx));
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#dc2626',
+                                  cursor: 'pointer',
+                                  fontSize: '0.75rem',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px'
+                                }}
+                                title="ลบชิ้นงานนี้"
+                              >
+                                ลบชิ้นนี้
+                              </button>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                              <input
+                                type="text"
+                                value={sub.title}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setEditSubItems(prev => prev.map((s, i) => i === sIdx ? { ...s, title: val } : s));
+                                }}
+                                placeholder="ชื่อชิ้นงาน (เช่น ชิ้นที่ 1, สไลด์ 1)"
+                                className="notion-input"
+                                style={{ fontSize: '0.82rem', padding: '6px 8px' }}
+                              />
+
+                              {/* Direct File Attachment Button & URL Input */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <label
+                                  className="notion-btn"
+                                  style={{
+                                    padding: '6px 10px',
+                                    borderRadius: '6px',
+                                    backgroundColor: '#f1f5f9',
+                                    border: '1px solid #cbd5e1',
+                                    color: '#1e293b',
+                                    fontSize: '0.78rem',
+                                    fontWeight: 500,
+                                    cursor: uploadingSubIndex === sIdx ? 'not-allowed' : 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    flexShrink: 0,
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                  title="คลิกเพื่อเลือกไฟล์แนบจากเครื่อง (PDF หรือ รูปภาพ)"
+                                >
+                                  {uploadingSubIndex === sIdx ? (
+                                    <>
+                                      <Loader2 size={13} className="animate-spin" />
+                                      <span>อัปโหลด...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UploadCloud size={13} color="#2563eb" />
+                                      <span>แนบไฟล์</span>
+                                    </>
+                                  )}
+                                  <input
+                                    type="file"
+                                    accept=".pdf,application/pdf,image/*"
+                                    disabled={uploadingSubIndex === sIdx}
+                                    style={{ display: 'none' }}
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      setUploadingSubIndex(sIdx);
+                                      try {
+                                        const ext = (file.name.split('.').pop() || '').toLowerCase();
+                                        const isImg = file.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext);
+
+                                        // Try uploading to Supabase Storage
+                                        let uploadedUrl = await uploadAssetToSupabase(file, 'portfolio-subitems');
+
+                                        // Fallback to data URL if cloud storage isn't available
+                                        if (!uploadedUrl) {
+                                          uploadedUrl = await new Promise<string>((resolve) => {
+                                            const reader = new FileReader();
+                                            reader.onload = () => resolve(reader.result as string);
+                                            reader.onerror = () => resolve('');
+                                            reader.readAsDataURL(file);
+                                          });
+                                        }
+
+                                        let thumbUrl = isImg ? uploadedUrl : '';
+                                        if (!isImg && file.type === 'application/pdf') {
+                                          try {
+                                            const thumb = await renderPdfFirstPageToImage(file);
+                                            if (thumb) thumbUrl = thumb;
+                                          } catch {}
+                                        }
+
+                                        const autoTitle = sub.title && !sub.title.startsWith('ชิ้นงานที่')
+                                          ? sub.title
+                                          : file.name.replace(/\.[^/.]+$/, '');
+
+                                        setEditSubItems(prev => prev.map((s, i) => i === sIdx ? {
+                                          ...s,
+                                          title: autoTitle,
+                                          url: uploadedUrl || '',
+                                          imageUrl: thumbUrl || s.imageUrl
+                                        } : s));
+                                      } catch (err: any) {
+                                        console.warn('Subitem upload error:', err);
+                                      } finally {
+                                        setUploadingSubIndex(null);
+                                      }
+                                    }}
+                                  />
+                                </label>
+
+                                <input
+                                  type="text"
+                                  value={sub.url}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setEditSubItems(prev => prev.map((s, i) => i === sIdx ? { ...s, url: val } : s));
+                                  }}
+                                  placeholder="หรือวางลิงก์ไฟล์ / PDF / รูปภาพ"
+                                  className="notion-input"
+                                  style={{ fontSize: '0.82rem', padding: '6px 8px', flex: 1, minWidth: 0 }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Preview Badge if file attached */}
+                            {sub.url && (
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '6px',
+                                padding: '4px 8px',
+                                fontSize: '0.74rem'
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                                  <CheckCircle2 size={13} color="#16a34a" />
+                                  <span style={{ color: '#15803d', fontWeight: 600, flexShrink: 0 }}>แนบแล้ว:</span>
+                                  <span style={{ color: 'var(--notion-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {sub.url.startsWith('data:') ? 'ไฟล์ที่แนบไว้ในเครื่อง' : sub.url}
+                                  </span>
+                                </div>
+                                <a
+                                  href={sub.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{ color: '#2563eb', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}
+                                >
+                                  <ExternalLink size={10} /> เปิดทดสอบ
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

@@ -19,10 +19,12 @@ import {
   Sun,
   Moon,
   BookOpen,
-  ExternalLink
+  ExternalLink,
+  FolderOpen
 } from 'lucide-react';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
 import { PdfDocViewer } from './PdfDocViewer';
+import Folder from './Folder';
 import { NavbarSearch } from './NavbarSearch';
 import Lanyard from './Lanyard';
 import { isCanvaUrl, toCanvaEmbedUrl } from '../utils/embedHelper';
@@ -47,6 +49,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewingPdf, setViewingPdf] = useState<{ url: string; title: string } | null>(null);
   const [isPdfFullscreen, setIsPdfFullscreen] = useState(false);
+  const [activeFolderProject, setActiveFolderProject] = useState<import('../types').PortfolioItem | null>(null);
+  const [isFolderOpen, setIsFolderOpen] = useState(false);
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
@@ -875,112 +879,119 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                         {/* Projects in this section */}
                         {group.items.length > 0 ? (
                           <div className="portfolio-grid">
-                            {group.items.map((item) => (
-                              <div
-                                key={item.id}
-                                id={`portfolio-item-${item.id}`}
-                                className="notion-card search-scroll-target"
-                                style={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                                  height: '100%'
-                                }}
-                              >
-                                {/* Clickable Card to view PDF or Image directly */}
+                            {group.items.map((item) => {
+                              const hasSubItems = item.subItems && item.subItems.length > 0;
+                              const hasMain = Boolean(item.pdfUrl || item.link || item.imageUrl);
+                              const totalPieces = (hasMain ? 1 : 0) + (hasSubItems ? item.subItems!.length : 0);
+                              const subCount = totalPieces;
+
+                              const handleOpenProject = () => {
+                                if (hasSubItems) {
+                                  setIsFolderOpen(false);
+                                  setActiveFolderProject(item);
+                                } else {
+                                  const viewUrl = item.pdfUrl || item.link || item.imageUrl;
+                                  if (viewUrl) {
+                                    setViewingPdf({ url: viewUrl, title: item.title });
+                                  }
+                                }
+                              };
+
+                              return (
                                 <div
-                                  onClick={() => {
-                                    const viewUrl = item.pdfUrl || item.link || item.imageUrl;
-                                    if (viewUrl) {
-                                      setViewingPdf({ url: viewUrl, title: item.title });
-                                    }
-                                  }}
+                                  key={item.id}
+                                  id={`portfolio-item-${item.id}`}
+                                  className="notion-card search-scroll-target"
                                   style={{
-                                    height: '210px',
-                                    overflow: 'hidden',
-                                    borderBottom: '1px solid var(--notion-border)',
-                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                                    height: '100%',
                                     position: 'relative'
                                   }}
-                                  title="คลิกเพื่อเปิดดูรูปภาพ / เอกสาร"
                                 >
-                                  <PdfCardThumbnail
-                                    imageUrl={item.imageUrl}
-                                    pdfUrl={item.pdfUrl || item.link}
-                                    title={item.title}
-                                  />
-                                </div>
+                                  {/* Clickable Card to view PDF / Image or open Folder 3D */}
+                                  <div
+                                    onClick={handleOpenProject}
+                                    style={{
+                                      height: '210px',
+                                      overflow: 'hidden',
+                                      borderBottom: '1px solid var(--notion-border)',
+                                      cursor: 'pointer',
+                                      position: 'relative'
+                                    }}
+                                    title={hasSubItems ? `คลิกเพื่อเปิดแฟ้มดูผลงานทั้งหมด (${subCount} ชิ้น)` : "คลิกเพื่อเปิดดูรูปภาพ / เอกสาร"}
+                                  >
+                                    <PdfCardThumbnail
+                                      imageUrl={item.imageUrl}
+                                      pdfUrl={item.pdfUrl || item.link}
+                                      title={item.title}
+                                    />
 
-                                <div style={{
-                                  padding: '18px 20px',
-                                  flex: 1,
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  justifyContent: 'space-between',
-                                  backgroundColor: 'var(--notion-bg)'
-                                }}>
-                                  <div>
-                                    {/* Title with subtle category / format indicator */}
-                                    <div style={{
-                                      display: 'flex',
-                                      alignItems: 'flex-start',
-                                      justifyContent: 'space-between',
-                                      gap: '12px',
-                                      marginBottom: item.description ? '8px' : '0px'
-                                    }}>
-                                      <h3
-                                        onClick={() => {
-                                          const viewUrl = item.pdfUrl || item.link || item.imageUrl;
-                                          if (viewUrl) {
-                                            setViewingPdf({ url: viewUrl, title: item.title });
-                                          }
-                                        }}
-                                        style={{
-                                          fontSize: '1.12rem',
-                                          fontWeight: 650,
-                                          color: 'var(--notion-text)',
-                                          lineHeight: 1.4,
-                                          margin: 0,
-                                          cursor: 'pointer',
-                                          transition: 'color 0.15s ease'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                          (e.currentTarget as HTMLElement).style.color = '#2563eb';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                          (e.currentTarget as HTMLElement).style.color = 'var(--notion-text)';
-                                        }}
-                                      >
-                                        {item.title}
-                                      </h3>
+                                  </div>
 
-                                      <span style={{ color: 'var(--notion-text-muted)', flexShrink: 0, marginTop: '2px', cursor: 'pointer' }}
-                                        onClick={() => {
-                                          const viewUrl = item.pdfUrl || item.link || item.imageUrl;
-                                          if (viewUrl) {
-                                            setViewingPdf({ url: viewUrl, title: item.title });
-                                          }
-                                        }}
-                                      >
-                                        <ArrowUpRight size={17} />
-                                      </span>
-                                    </div>
-
-                                    {/* Description */}
-                                    {item.description ? (
-                                      <p style={{
-                                        fontSize: '0.88rem',
-                                        color: 'var(--notion-text-muted)',
-                                        lineHeight: 1.55,
-                                        margin: '0 0 14px 0'
+                                  <div style={{
+                                    padding: '18px 20px',
+                                    flex: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'space-between',
+                                    backgroundColor: 'var(--notion-bg)'
+                                  }}>
+                                    <div>
+                                      {/* Title with subtle category / format indicator */}
+                                      <div style={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        justifyContent: 'space-between',
+                                        gap: '12px',
+                                        marginBottom: item.description ? '8px' : '0px'
                                       }}>
-                                        {item.description}
-                                      </p>
-                                    ) : null}
+                                        <h3
+                                          onClick={handleOpenProject}
+                                          style={{
+                                            fontSize: '1.12rem',
+                                            fontWeight: 650,
+                                            color: 'var(--notion-text)',
+                                            lineHeight: 1.4,
+                                            margin: 0,
+                                            cursor: 'pointer',
+                                            transition: 'color 0.15s ease'
+                                          }}
+                                          onMouseEnter={(e) => {
+                                            (e.currentTarget as HTMLElement).style.color = '#2563eb';
+                                          }}
+                                          onMouseLeave={(e) => {
+                                            (e.currentTarget as HTMLElement).style.color = 'var(--notion-text)';
+                                          }}
+                                        >
+                                          {item.title}
+                                        </h3>
+
+                                        <span style={{ color: 'var(--notion-text-muted)', flexShrink: 0, marginTop: '2px', cursor: 'pointer' }}
+                                          onClick={handleOpenProject}
+                                          title={hasSubItems ? "เปิดดูแฟ้มงาน" : "เปิดดูเอกสาร"}
+                                        >
+                                          {hasSubItems ? <FolderOpen size={17} color="#2563eb" /> : <ArrowUpRight size={17} />}
+                                        </span>
+                                      </div>
+
+                                      {/* Description */}
+                                      {item.description ? (
+                                        <p style={{
+                                          fontSize: '0.88rem',
+                                          color: 'var(--notion-text-muted)',
+                                          lineHeight: 1.55,
+                                          margin: '0 0 14px 0'
+                                        }}>
+                                          {item.description}
+                                        </p>
+                                      ) : null}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         ) : (
                           <div style={{
@@ -1128,7 +1139,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             inset: 0,
             backgroundColor: 'rgba(15, 15, 15, 0.75)',
             backdropFilter: 'blur(6px)',
-            zIndex: 9999,
+            zIndex: 100000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1264,6 +1275,159 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               ) : (
                 <PdfDocViewer url={viewingPdf.url} title={viewingPdf.title} />
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3D FOLDER VIEWER MODAL (When clicking a multi-item project) */}
+      {activeFolderProject && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+          onClick={() => setActiveFolderProject(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '860px',
+              backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
+              borderRadius: '20px',
+              border: '1px solid var(--notion-border)',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.45)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              maxHeight: '92vh'
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px 24px',
+                borderBottom: '1px solid var(--notion-border)',
+                backgroundColor: theme === 'dark' ? 'rgba(30, 41, 59, 0.6)' : '#f8fafc'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#2563eb'
+                  }}
+                >
+                  <FolderOpen size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--notion-text)' }}>
+                    {activeFolderProject.title}
+                  </h3>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveFolderProject(null)}
+                className="notion-btn"
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--notion-border)',
+                  background: 'var(--notion-bg)',
+                  color: 'var(--notion-text)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.82rem'
+                }}
+                title="ปิดแฟ้ม (Esc)"
+              >
+                <X size={16} />
+                <span>ปิด</span>
+              </button>
+            </div>
+
+            {/* 3D Interactive Folder Stage */}
+            <div
+              style={{
+                flex: 1,
+                minHeight: '440px',
+                padding: '48px 24px 36px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: theme === 'dark'
+                  ? 'radial-gradient(ellipse at center, #1e293b 0%, #0b0f19 100%)'
+                  : 'radial-gradient(ellipse at center, #f1f5f9 0%, #e2e8f0 100%)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 0 20px' }}>
+                <Folder
+                  label={activeFolderProject.title.slice(0, 20)}
+                  mode="flap"
+                  variant="solid"
+                  color="#2563eb"
+                  paperColor="#ffffff"
+                  layout="spread"
+                  size={1.35}
+                  open={isFolderOpen}
+                  onOpenChange={setIsFolderOpen}
+                  closeOnOutsideClick={false}
+                  openOn="click"
+                  draggable={true}
+                  zoomOnClick={false}
+                  peek={true}
+                  theme={theme}
+                  items={[
+                    // ชิ้นงานหลัก (Main project piece)
+                    ...(activeFolderProject.pdfUrl || activeFolderProject.link || activeFolderProject.imageUrl ? [{
+                      title: activeFolderProject.fileName || activeFolderProject.title,
+                      image: activeFolderProject.imageUrl || (activeFolderProject.pdfUrl && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(activeFolderProject.pdfUrl) ? activeFolderProject.pdfUrl : undefined),
+                      url: activeFolderProject.pdfUrl || activeFolderProject.link || activeFolderProject.imageUrl,
+                      description: activeFolderProject.description
+                    }] : []),
+                    // ชิ้นงานย่อยทั้งหมด (All sub-items)
+                    ...(activeFolderProject.subItems || []).map((sub, idx) => ({
+                      title: sub.title || `ชิ้นงานที่ ${idx + 2}`,
+                      image: sub.imageUrl || (sub.url && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(sub.url) ? sub.url : undefined),
+                      url: sub.url,
+                      description: sub.description
+                    }))
+                  ]}
+                  onItemClick={(item) => {
+                    const viewUrl = item.url || item.image || item.imageUrl;
+                    if (viewUrl) {
+                      setViewingPdf({ url: viewUrl, title: item.title || activeFolderProject.title });
+                    }
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>

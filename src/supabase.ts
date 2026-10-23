@@ -84,11 +84,24 @@ function parseProjectRow(row: SupabaseProjectRow): PortfolioItem {
     }
   }
 
+  let finalDescription = row.description || '';
+  let subItems: PortfolioItem['subItems'] = undefined;
+  if (finalDescription.startsWith('SUBITEMS:::')) {
+    try {
+      const idx = finalDescription.indexOf(':::ENDSUB:::');
+      if (idx !== -1) {
+        const jsonStr = finalDescription.substring('SUBITEMS:::'.length, idx);
+        subItems = JSON.parse(jsonStr);
+        finalDescription = finalDescription.substring(idx + ':::ENDSUB:::'.length);
+      }
+    } catch {}
+  }
+
   return {
     id: row.id || `p-${Date.now()}`,
     title: row.title,
     category: realCategory,
-    description: row.description || '',
+    description: finalDescription,
     imageUrl: (row.image_url && !row.image_url.includes('unsplash.com'))
       ? row.image_url
       : (isSection ? '' : '/banner.png'),
@@ -98,6 +111,7 @@ function parseProjectRow(row: SupabaseProjectRow): PortfolioItem {
     tags: isSection ? ['Section'] : ['PDF', realCategory],
     createdAt: row.created_at,
     itemType: isSection ? 'section' : 'project',
+    subItems: subItems && subItems.length > 0 ? subItems : undefined,
     sectionBg: isSection ? sectionBg : undefined,
     sectionColor: isSection ? sectionColor : undefined,
     sectionBorder: isSection ? sectionBorder : undefined,
@@ -446,6 +460,7 @@ export async function updateProjectInSupabase(params: {
   category?: string;
   linkUrl?: string;
   newFile?: File | null;
+  subItems?: PortfolioItem['subItems'];
 }): Promise<{ success: boolean; item?: PortfolioItem; error?: string }> {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -453,9 +468,14 @@ export async function updateProjectInSupabase(params: {
   }
 
   try {
+    let descToSave = params.description?.trim() || '';
+    if (params.subItems !== undefined && params.subItems.length > 0) {
+      descToSave = `SUBITEMS:::${JSON.stringify(params.subItems)}:::ENDSUB:::${descToSave}`;
+    }
+
     const updatePayload: Record<string, any> = {
       title: params.title.trim(),
-      description: params.description?.trim() || '',
+      description: descToSave,
       category: params.category || 'PDF Document'
     };
 
@@ -568,7 +588,7 @@ export async function updateProjectInSupabase(params: {
       id: params.id,
       title: updatePayload.title,
       category: realCategory,
-      description: updatePayload.description || '',
+      description: params.description?.trim() || '',
       imageUrl: (row && row.image_url && !row.image_url.includes('unsplash.com'))
         ? row.image_url
         : (isSection ? '' : '/banner.png'),
@@ -578,6 +598,7 @@ export async function updateProjectInSupabase(params: {
       tags: isSection ? ['Section'] : ['PDF', realCategory],
       createdAt: row?.created_at,
       itemType: isSection ? 'section' : 'project',
+      subItems: params.subItems,
       sectionBg: isSection ? sectionBg : undefined,
       sectionColor: isSection ? sectionColor : undefined,
       sectionBorder: isSection ? sectionBorder : undefined,
