@@ -118,7 +118,7 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
             <iframe
               src={embedSrc}
               title={title}
-              loading="lazy"
+              loading="eager"
               allow="fullscreen; autoplay"
               onLoad={() => setCanvaLoaded(true)}
               style={{
@@ -129,7 +129,7 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
                 transform: 'scale(1.05)', // fills card nicely for landscape / presentation mode
                 transformOrigin: 'center center',
                 opacity: canvaLoaded ? 1 : 0,
-                transition: 'opacity 0.25s ease'
+                transition: 'opacity 0.15s ease'
               }}
             />
           </div>
