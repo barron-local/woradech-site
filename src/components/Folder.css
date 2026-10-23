@@ -5,6 +5,7 @@
   position: relative;
   display: inline-block;
   width: var(--folder-w);
+  max-width: 100%;
   height: calc(var(--folder-tab-h) + var(--folder-h));
   vertical-align: middle;
   user-select: none;
@@ -116,7 +117,7 @@
   overflow: hidden;
   color: var(--folder-tab-ink);
   opacity: var(--folder-label, 1);
-  font-size: calc(10.5px * var(--folder-scale));
+  font-size: max(8.5px, calc(10.5px * var(--folder-scale)));
   font-weight: 600;
   letter-spacing: -0.005em;
   line-height: 1;

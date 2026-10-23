@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { SiteConfig } from '../types';
 import { Carousel } from './Carousel';
 import {
@@ -52,6 +52,41 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
   const [activeFolderProject, setActiveFolderProject] = useState<import('../types').PortfolioItem | null>(null);
   const [isFolderOpen, setIsFolderOpen] = useState(false);
 
+  // Responsive window dimensions tracking
+  const [windowDimensions, setWindowDimensions] = useState(() => ({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800,
+  }));
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Compute optimal 3D Folder scale based on screen size (100% responsive on all devices)
+  const folderSize = useMemo(() => {
+    const { width, height } = windowDimensions;
+    let s = 1.35;
+    if (width < 360) s = 0.72;
+    else if (width < 420) s = 0.82;
+    else if (width < 600) s = 0.95;
+    else if (width < 768) s = 1.12;
+    else if (width < 1024) s = 1.25;
+    else s = 1.35;
+
+    // Landscape orientation on mobile devices (e.g. height < 520px)
+    if (height < 520) {
+      s = Math.min(s, 0.82);
+    }
+    return s;
+  }, [windowDimensions]);
+
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('site-theme');
@@ -67,20 +102,23 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
     localStorage.setItem('site-theme', theme);
   }, [theme]);
 
-
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
   // Lock body scroll when modal is open so the background page does not scroll
   useEffect(() => {
-    if (viewingPdf) {
+    if (viewingPdf || activeFolderProject) {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       const handleEsc = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
-          setViewingPdf(null);
-          setIsPdfFullscreen(false);
+          if (viewingPdf) {
+            setViewingPdf(null);
+            setIsPdfFullscreen(false);
+          } else if (activeFolderProject) {
+            setActiveFolderProject(null);
+          }
         }
       };
       window.addEventListener('keydown', handleEsc);
@@ -89,7 +127,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
         window.removeEventListener('keydown', handleEsc);
       };
     }
-  }, [viewingPdf]);
+  }, [viewingPdf, activeFolderProject]);
 
   const handleNavClick = (page: PageRoute) => {
     onNavigate(page);
@@ -447,7 +485,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
         {/* ----------------- PAGE 2: ABOUT (แยกหน้า - คง State ไว้เพื่อให้เปิดได้ทันทีโดยไม่โหลดซ้ำ 0ms) ----------------- */}
         <div style={{ display: currentPage === 'about' ? 'block' : 'none' }}>
-          <section style={{ maxWidth: '960px', margin: '0 auto', padding: '48px 24px 80px' }}>
+          <section className="responsive-page-container" style={{ maxWidth: '960px', margin: '0 auto' }}>
             <div style={{ marginBottom: '36px' }}>
               <h1 style={{ fontSize: '2.4rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
                 {config.about.title}
@@ -714,7 +752,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
         {/* ----------------- PAGE 3: PORTFOLIO (แยกหน้า) ----------------- */}
         {currentPage === 'portfolio' && (
-          <section id="portfolio-root" className="search-scroll-target" style={{ maxWidth: '1080px', margin: '0 auto', padding: '48px 24px 80px' }}>
+          <section id="portfolio-root" className="responsive-page-container search-scroll-target" style={{ maxWidth: '1080px', margin: '0 auto' }}>
             <div style={{ marginBottom: '32px' }}>
               <h1 style={{ fontSize: '2.4rem', fontWeight: 700, color: 'var(--notion-text)' }}>
                 {config.portfolio.title}
@@ -831,6 +869,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                         {/* Section Header Banner */}
                         {section && (
                           <div
+                            className="portfolio-section-banner"
                             style={{
                               backgroundColor: bg,
                               color: textColor,
@@ -1204,7 +1243,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   title="เปิดในแท็บใหม่"
                 >
                   <ExternalLink size={13} />
-                  <span>เปิดลิงก์</span>
+                  <span className="btn-text-responsive">เปิดลิงก์</span>
                 </a>
                 <button
                   type="button"
@@ -1225,7 +1264,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   title={isPdfFullscreen ? "ย่อหน้าต่าง" : "ขยายเต็มจอ"}
                 >
                   {isPdfFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-                  <span>{isPdfFullscreen ? "ย่อ" : "เต็มจอ"}</span>
+                  <span className="btn-text-responsive">{isPdfFullscreen ? "ย่อ" : "เต็มจอ"}</span>
                 </button>
                 <button
                   type="button"
@@ -1280,68 +1319,45 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
         </div>
       )}
 
-      {/* 3D FOLDER VIEWER MODAL (When clicking a multi-item project) */}
+      {/* 3D FOLDER VIEWER MODAL (When clicking a multi-item project - 100% Responsive) */}
       {activeFolderProject && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-            animation: 'fadeIn 0.2s ease-out'
-          }}
+          className="folder-modal-overlay"
           onClick={() => setActiveFolderProject(null)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
+            className="folder-modal-container"
             style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '860px',
               backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
-              borderRadius: '20px',
-              border: '1px solid var(--notion-border)',
-              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.45)',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              maxHeight: '92vh'
             }}
           >
             {/* Modal Header */}
             <div
+              className="folder-modal-header"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '16px 24px',
-                borderBottom: '1px solid var(--notion-border)',
                 backgroundColor: theme === 'dark' ? 'rgba(30, 41, 59, 0.6)' : '#f8fafc'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
                 <div
                   style={{
                     width: '34px',
                     height: '34px',
+                    minWidth: '34px',
                     borderRadius: '10px',
                     backgroundColor: 'rgba(37, 99, 235, 0.12)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#2563eb'
+                    color: '#2563eb',
+                    flexShrink: 0
                   }}
                 >
                   <FolderOpen size={18} />
                 </div>
-                <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--notion-text)' }}>
+                <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                  <h3 className="folder-modal-title">
                     {activeFolderProject.title}
                   </h3>
                 </div>
@@ -1361,7 +1377,8 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
-                  fontSize: '0.82rem'
+                  fontSize: '0.82rem',
+                  flexShrink: 0
                 }}
                 title="ปิดแฟ้ม (Esc)"
               >
@@ -1372,22 +1389,14 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
             {/* 3D Interactive Folder Stage */}
             <div
+              className="folder-modal-stage"
               style={{
-                flex: 1,
-                minHeight: '440px',
-                padding: '48px 24px 36px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
                 background: theme === 'dark'
                   ? 'radial-gradient(ellipse at center, #1e293b 0%, #0b0f19 100%)'
                   : 'radial-gradient(ellipse at center, #f1f5f9 0%, #e2e8f0 100%)',
-                position: 'relative',
-                overflow: 'hidden'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 0 20px' }}>
+              <div className="folder-stage-inner">
                 <Folder
                   label={activeFolderProject.title.slice(0, 20)}
                   mode="flap"
@@ -1395,7 +1404,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   color="#2563eb"
                   paperColor="#ffffff"
                   layout="spread"
-                  size={1.35}
+                  size={folderSize}
                   open={isFolderOpen}
                   onOpenChange={setIsFolderOpen}
                   closeOnOutsideClick={false}

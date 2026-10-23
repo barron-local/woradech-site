@@ -246,7 +246,8 @@ const placeFlap = (rank: number, count: number, phase: string, layout: string, g
       };
     }
     const gap = 12 * g.scale;
-    const fit = Math.min(0.94, (g.w * 2.3 - gap * (count - 1)) / (count * g.docW));
+    const spanFactor = g.w > 260 ? 2.2 : 1.85;
+    const fit = Math.min(0.94, (g.w * spanFactor - gap * (count - 1)) / (count * g.docW));
     const step = g.docW * fit + gap;
     const tidy = layout === 'row';
     return {
@@ -1203,7 +1204,7 @@ export const Folder: React.FC<FolderProps> = ({
 
   useEffect(() => {
     engineRef.current?.wake();
-  }, [isOpen]);
+  }, [isOpen, scale]);
 
   const toggle = () => {
     if (engineRef.current?.blur()) return;
