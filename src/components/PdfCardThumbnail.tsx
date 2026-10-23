@@ -112,7 +112,10 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
               left: '50%',
               transform: 'translate(-50%, -50%)',
               width: '100%',
-              height: 'calc(100% + 56px)', // Extra height to push bottom controls below clipping mask
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               overflow: 'hidden'
             }}
           >
@@ -123,11 +126,11 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
               allow="fullscreen; autoplay"
               onLoad={() => setCanvaLoaded(true)}
               style={{
-                width: '100%',
-                height: '100%',
+                width: '108%',
+                height: '124%',
                 border: 'none',
                 pointerEvents: 'none', // Prevents capturing card click events
-                objectFit: 'cover',
+                transform: 'translateY(-12px)', // Shifts slide upwards to center stage content and crop controls
                 opacity: canvaLoaded ? 1 : 0,
                 transition: 'opacity 0.15s ease'
               }}
