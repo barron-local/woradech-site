@@ -81,36 +81,42 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
           overflow: 'hidden'
         }}
       >
-        {/* Placeholder / Skeleton preview while Canva is bootstrapping */}
+        {/* Minimalist Notion-style neutral skeleton while Canva bootstraps */}
         {!canvaLoaded && (
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(135deg, rgba(0, 196, 204, 0.15) 0%, rgba(125, 42, 232, 0.2) 100%)',
+              backgroundColor: '#f9fafb',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 1,
-              transition: 'opacity 0.3s ease'
+              transition: 'opacity 0.25s ease'
             }}
           >
+            {/* Elegant Minimalist Spinner */}
             <div
               style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '10px',
-                backgroundColor: 'rgba(255, 255, 255, 0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '8px'
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                border: '2px solid #e5e7eb',
+                borderTopColor: '#4b5563',
+                animation: 'spin 0.8s linear infinite',
+                marginBottom: '10px'
+              }}
+            />
+            <span
+              style={{
+                fontSize: '0.78rem',
+                color: '#6b7280',
+                fontWeight: 500,
+                letterSpacing: '0.01em',
+                fontFamily: 'inherit'
               }}
             >
-              <Presentation size={22} color="#a855f7" />
-            </div>
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>
               กำลังโหลดสไลด์...
             </span>
           </div>
