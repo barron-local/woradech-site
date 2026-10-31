@@ -20,7 +20,8 @@ import {
   Moon,
   BookOpen,
   ExternalLink,
-  FolderOpen
+  FolderOpen,
+  Lock
 } from 'lucide-react';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
 import { PdfDocViewer } from './PdfDocViewer';
@@ -44,6 +45,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
   config,
   currentPage,
   onNavigate,
+  onOpenEditor,
   isInitialLoading = false
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -410,6 +412,33 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             >
               {config.navLinks.portfolio}
             </button>
+
+            {onOpenEditor && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenEditor();
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px dashed var(--notion-border)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                  fontWeight: 500,
+                  color: 'var(--notion-text-muted)',
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  marginTop: '4px'
+                }}
+              >
+                <Lock size={15} />
+                <span>เข้าสู่ระบบจัดการ (Admin)</span>
+              </button>
+            )}
 
           </div>
         )}
@@ -868,51 +897,147 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                       >
                         {/* Section Header Banner */}
                         {section && (
-                          <div
-                            className="portfolio-section-banner"
-                            style={{
-                              backgroundColor: bg,
-                              color: textColor,
-                              border: finalBorder,
-                              borderRadius: '12px',
-                              padding: '16px 24px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: justifyContent,
-                              textAlign: align,
-                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                              position: 'relative'
-                            }}
-                          >
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: justifyContent,
-                              gap: '12px',
-                              width: align === 'center' ? '100%' : 'auto'
-                            }}>
-                              {showBar && (
-                                <div style={{
-                                  width: '8px',
-                                  height: '24px',
-                                  borderRadius: '4px',
-                                  backgroundColor: textColor,
-                                  opacity: 0.85,
-                                  flexShrink: 0
-                                }} />
-                              )}
-                              <h2 style={{
-                                fontSize: fontSize,
-                                fontWeight: 700,
-                                color: textColor,
-                                margin: 0,
-                                letterSpacing: '-0.01em',
-                                lineHeight: 1.3
-                              }}>
-                                {section.title}
-                              </h2>
+                          section.imageUrl && section.sectionBannerType !== 'text' ? (
+                            /* Image Banner Section */
+                            <div
+                              className="portfolio-section-banner portfolio-section-image-banner"
+                              style={{
+                                position: 'relative',
+                                width: '100%',
+                                borderRadius: '14px',
+                                overflow: 'hidden',
+                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+                                backgroundColor: isDark ? '#1e293b' : '#f1f5f9'
+                              }}
+                            >
+                              <img
+                                src={section.imageUrl}
+                                alt={section.title || "Section Banner"}
+                                style={{
+                                  width: '100%',
+                                  height: 'auto',
+                                  maxHeight: '380px',
+                                  display: 'block',
+                                  objectFit: 'cover'
+                                }}
+                              />
+                              {!section.sectionHideTitle && section.title && (() => {
+                                const hasCustomPos = section.sectionTextX !== undefined && section.sectionTextY !== undefined;
+                                const posX = hasCustomPos ? Math.max(2, Math.min(98, section.sectionTextX!)) : (align === 'center' ? 50 : align === 'right' ? 95 : 5);
+                                const posY = hasCustomPos ? Math.max(5, Math.min(95, section.sectionTextY!)) : 88;
+                                const showFrame = section.sectionShowFrame !== false;
+
+                                return (
+                                  <div
+                                    style={{
+                                      position: 'absolute',
+                                      inset: 0,
+                                      background: showFrame
+                                        ? 'linear-gradient(to top, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.15) 55%, transparent 100%)'
+                                        : 'linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.25) 50%, transparent 100%)',
+                                      pointerEvents: 'none'
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        position: 'absolute',
+                                        left: `${posX}%`,
+                                        top: `${posY}%`,
+                                        transform: `translate(-${posX}%, -${posY}%)`,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        padding: showFrame ? '7px 14px' : '2px 4px',
+                                        borderRadius: showFrame ? '8px' : '0px',
+                                        backgroundColor: showFrame ? 'rgba(15, 23, 42, 0.52)' : 'transparent',
+                                        backdropFilter: showFrame ? 'blur(8px)' : 'none',
+                                        border: showFrame ? '1px solid rgba(255, 255, 255, 0.22)' : 'none',
+                                        boxShadow: showFrame ? '0 4px 14px rgba(0, 0, 0, 0.35)' : 'none',
+                                        maxWidth: '92%'
+                                      }}
+                                    >
+                                      {showBar && (
+                                        <div
+                                          style={{
+                                            width: '5px',
+                                            height: '22px',
+                                            borderRadius: '3px',
+                                            backgroundColor: '#ffffff',
+                                            opacity: 0.95,
+                                            flexShrink: 0,
+                                            boxShadow: !showFrame ? '0 1px 4px rgba(0, 0, 0, 0.8)' : 'none'
+                                          }}
+                                        />
+                                      )}
+                                      <h2
+                                        style={{
+                                          fontSize: fontSize,
+                                          fontWeight: 700,
+                                          color: '#ffffff',
+                                          textShadow: showFrame
+                                            ? '0 2px 6px rgba(0, 0, 0, 0.8)'
+                                            : '0 2px 10px rgba(0, 0, 0, 0.95), 0 1px 3px rgba(0, 0, 0, 0.9)',
+                                          margin: 0,
+                                          letterSpacing: '-0.01em',
+                                          lineHeight: 1.3
+                                        }}
+                                      >
+                                        {section.title}
+                                      </h2>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
-                          </div>
+                          ) : (
+                            /* Text / Colored Header Section */
+                            <div
+                              className="portfolio-section-banner"
+                              style={{
+                                backgroundColor: bg,
+                                color: textColor,
+                                border: finalBorder,
+                                borderRadius: '12px',
+                                padding: '16px 24px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: justifyContent,
+                                textAlign: align,
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                                position: 'relative'
+                              }}
+                            >
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: justifyContent,
+                                gap: '12px',
+                                width: align === 'center' ? '100%' : 'auto'
+                              }}>
+                                {showBar && (
+                                  <div style={{
+                                    width: '8px',
+                                    height: '24px',
+                                    borderRadius: '4px',
+                                    backgroundColor: textColor,
+                                    opacity: 0.85,
+                                    flexShrink: 0
+                                  }} />
+                                )}
+                                <h2 style={{
+                                  fontSize: fontSize,
+                                  fontWeight: 700,
+                                  color: textColor,
+                                  margin: 0,
+                                  letterSpacing: '-0.01em',
+                                  lineHeight: 1.3
+                                }}>
+                                  {section.title}
+                                </h2>
+                              </div>
+                            </div>
+                          )
                         )}
 
                         {/* Projects in this section */}
@@ -1042,7 +1167,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                             borderRadius: '8px',
                             border: '1px dashed var(--notion-border)'
                           }}>
-                            ยังไม่มีรายการผลงานในหมวดหมู่นี้
+                            ยังไม่มีรายการผลงานในหน่วยนี้
                           </div>
                         )}
                       </div>
@@ -1167,6 +1292,31 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
           <div style={{ fontSize: '0.9rem', color: 'var(--notion-text-muted)' }}>
             วิทยาลัยเทคนิคนครศรีธรรมราช
           </div>
+
+          {onOpenEditor && (
+            <button
+              onClick={onOpenEditor}
+              style={{
+                marginTop: '12px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.78rem',
+                color: 'var(--notion-text-muted)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                opacity: 0.7,
+                transition: 'opacity 0.2s'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+              title="เข้าสู่หน้าผู้ดูแลระบบ (/admin)"
+            >
+              <Lock size={12} />
+              <span>จัดการเว็บไซต์ (Admin)</span>
+            </button>
+          )}
         </div>
       </footer>
 

@@ -43,6 +43,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const mobileInputRef = useRef<HTMLInputElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   // Build indexed search items from config
@@ -500,7 +501,7 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
         type="button"
         onClick={() => {
           setIsOpen(true);
-          setTimeout(() => inputRef.current?.focus(), 60);
+          setTimeout(() => mobileInputRef.current?.focus(), 80);
         }}
         className="navbar-search-mobile-btn"
         style={{
@@ -543,6 +544,51 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
           }}
           className="search-suggestions-dropdown"
         >
+          {/* Mobile In-dropdown Search Input */}
+          <div className="search-mobile-input-bar" style={{
+            padding: '10px 12px',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+            backgroundColor: 'rgba(0, 0, 0, 0.02)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              backgroundColor: '#ffffff',
+              border: '1.5px solid #3b82f6',
+              borderRadius: '8px',
+              padding: '6px 10px',
+              width: '100%',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+            }}>
+              <Search size={15} color="#2563eb" style={{ flexShrink: 0 }} />
+              <input
+                ref={mobileInputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="พิมพ์ค้นหาผลงาน, หน่วย, การศึกษา..."
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '0.88rem',
+                  width: '100%',
+                  background: 'transparent',
+                  color: 'var(--notion-text)'
+                }}
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '2px', color: '#64748b' }}
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+          </div>
           {/* List of Suggestions */}
           <div style={{ maxHeight: '360px', overflowY: 'auto', padding: '6px' }}>
             {searchResults.length > 0 ? (

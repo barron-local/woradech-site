@@ -288,7 +288,27 @@ h1, h2, h3, h4, h5, h6 {
   display: none !important;
 }
 
+/* Responsive Helper Classes for Admin & Menus */
+.editor-tab-label-full,
+.upload-tab-text-full,
+.editor-nav-label-full {
+  display: inline;
+}
+
+.editor-tab-label-short,
+.upload-tab-text-short,
+.editor-nav-label-short {
+  display: none;
+}
+
+.search-mobile-input-bar {
+  display: none;
+}
+
 @media (max-width: 768px) {
+  .search-mobile-input-bar {
+    display: block !important;
+  }
   .desktop-nav {
     display: none !important;
   }
@@ -363,18 +383,131 @@ h1, h2, h3, h4, h5, h6 {
   .upload-item-card {
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 14px !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
   }
 
   .upload-item-actions {
     width: 100% !important;
-    justify-content: flex-end !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-top: 6px !important;
+  }
+
+  .upload-item-actions button {
+    flex: 1 !important;
+    justify-content: center !important;
+    padding: 8px 12px !important;
+    font-size: 0.84rem !important;
   }
 
   /* Modal Width & Sizing */
   .responsive-modal {
-    width: 95vw !important;
-    margin: 10px auto !important;
+    width: 96vw !important;
+    max-height: 92vh !important;
+    margin: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .responsive-modal-body {
+    max-height: calc(92vh - 120px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 14px 14px !important;
+  }
+
+  .responsive-modal-footer {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .responsive-modal-footer button {
+    flex: 1 1 120px !important;
+    justify-content: center !important;
+    padding: 9px 14px !important;
+  }
+
+  /* Admin SiteEditor Header & Tabs */
+  .editor-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+  }
+
+  .editor-header-left {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .editor-tabs {
+    width: 100% !important;
+    display: flex !important;
+    gap: 6px !important;
+  }
+
+  .editor-tab-btn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    justify-content: center !important;
+    padding: 8px 6px !important;
+    font-size: 0.8rem !important;
+    gap: 5px !important;
+  }
+
+  .editor-tab-label-full,
+  .upload-tab-text-full,
+  .editor-nav-label-full {
+    display: none !important;
+  }
+
+  .editor-tab-label-short,
+  .upload-tab-text-short,
+  .editor-nav-label-short {
+    display: inline !important;
+    white-space: nowrap !important;
+  }
+
+  .upload-mode-tabs {
+    padding: 4px !important;
+    gap: 4px !important;
+  }
+
+  .upload-mode-tab-btn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    padding: 8px 4px !important;
+    font-size: 0.78rem !important;
+    gap: 4px !important;
+  }
+
+  .section-type-switcher {
+    width: 100% !important;
+    display: flex !important;
+  }
+
+  .section-type-switcher button {
+    flex: 1 !important;
+    justify-content: center !important;
+    padding: 7px 6px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .editor-save-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 12px 14px !important;
+    gap: 10px !important;
+  }
+
+  .editor-save-bar button {
+    width: 100% !important;
+    justify-content: center !important;
   }
 
   /* Typography scale on mobile */

@@ -223,39 +223,33 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
         }}
       >
         {/* Left: Back */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="editor-header-left">
           <button
             onClick={onCloseEditor}
-            className="notion-btn"
+            className="notion-btn editor-back-btn"
             style={{
               fontSize: '0.84rem',
               fontWeight: 500,
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 10px',
+              padding: '6px 12px',
               borderRadius: 'var(--radius-xs)',
               border: '1px solid var(--notion-border)',
               backgroundColor: '#ffffff'
             }}
           >
             <ArrowLeft size={15} />
-            <span>กลับหน้าหลัก</span>
+            <span className="editor-nav-label-full">กลับหน้าหลัก</span>
+            <span className="editor-nav-label-short">หน้าหลัก</span>
           </button>
         </div>
 
         {/* Right: Modern Prominent Tabs Switcher */}
-        <div
-          className="editor-tabs"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            flexWrap: 'wrap'
-          }}
-        >
+        <div className="editor-tabs">
           <button
             onClick={() => setActiveTab('carousel')}
+            className={`editor-tab-btn ${activeTab === 'carousel' ? 'active' : ''}`}
             style={{
               fontSize: '0.86rem',
               fontWeight: activeTab === 'carousel' ? 700 : 500,
@@ -265,7 +259,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
               borderColor: activeTab === 'carousel' ? 'var(--notion-text)' : 'var(--notion-border)',
               borderRadius: 'var(--radius-xs)',
               boxShadow: activeTab === 'carousel' ? '0 2px 6px rgba(0,0,0,0.15)' : '0 1px 2px rgba(0,0,0,0.03)',
-              padding: '8px 18px',
+              padding: '8px 16px',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
@@ -274,11 +268,13 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
             }}
           >
             <Layers size={17} strokeWidth={activeTab === 'carousel' ? 2.2 : 1.8} />
-            <span style={{ whiteSpace: 'nowrap' }}>จัดการรูปภาพ แบนเนอร์ & Carousel</span>
+            <span className="editor-tab-label-full">จัดการรูปภาพ แบนเนอร์ & Carousel</span>
+            <span className="editor-tab-label-short">แบนเนอร์ & สไลด์</span>
           </button>
 
           <button
             onClick={() => setActiveTab('upload')}
+            className={`editor-tab-btn ${activeTab === 'upload' ? 'active' : ''}`}
             style={{
               fontSize: '0.86rem',
               fontWeight: activeTab === 'upload' ? 700 : 500,
@@ -288,7 +284,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
               borderColor: activeTab === 'upload' ? 'var(--notion-text)' : 'var(--notion-border)',
               borderRadius: 'var(--radius-xs)',
               boxShadow: activeTab === 'upload' ? '0 2px 6px rgba(0,0,0,0.15)' : '0 1px 2px rgba(0,0,0,0.03)',
-              padding: '8px 14px',
+              padding: '8px 16px',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
@@ -297,7 +293,8 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
             }}
           >
             <FileText size={17} strokeWidth={activeTab === 'upload' ? 2.2 : 1.8} />
-            <span style={{ whiteSpace: 'nowrap' }}>จัดการไฟล์งาน (PDF & รูปภาพ)</span>
+            <span className="editor-tab-label-full">จัดการไฟล์งาน (PDF & รูปภาพ)</span>
+            <span className="editor-tab-label-short">จัดการไฟล์งาน</span>
           </button>
         </div>
       </header>
@@ -724,16 +721,19 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
             </section>
 
             {/* Bottom Save Bar */}
-            <div style={{
-              marginTop: '32px',
-              paddingTop: '20px',
-              borderTop: '1px solid var(--notion-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '12px'
-            }}>
+            <div
+              className="editor-save-bar"
+              style={{
+                marginTop: '32px',
+                paddingTop: '20px',
+                borderTop: '1px solid var(--notion-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}
+            >
               {/* Inline Save Status Indicator */}
               <div>
                 {saveSuccess ? (

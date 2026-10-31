@@ -67,6 +67,11 @@ function parseProjectRow(row: SupabaseProjectRow): PortfolioItem {
   let sectionShowBar = true;
   let sectionFontSize = '1.28rem';
   let sectionAlign: 'left' | 'center' | 'right' = 'left';
+  let sectionBannerType: 'text' | 'image' = (row.image_url && row.image_url.trim()) ? 'image' : 'text';
+  let sectionHideTitle = false;
+  let sectionTextX: number | undefined = undefined;
+  let sectionTextY: number | undefined = undefined;
+  let sectionShowFrame = true;
   let realCategory = row.category || 'PDF Document';
 
   if (row.category && row.category.startsWith('SECTION:::')) {
@@ -81,6 +86,23 @@ function parseProjectRow(row: SupabaseProjectRow): PortfolioItem {
       realCategory = parts[7] || 'Section';
     } else {
       realCategory = parts[4] || 'Section';
+    }
+    if (parts.length > 8 && (parts[8] === 'image' || parts[8] === 'text')) {
+      sectionBannerType = parts[8] as 'text' | 'image';
+    }
+    if (parts.length > 9) {
+      sectionHideTitle = parts[9] === '1';
+    }
+    if (parts.length > 10 && parts[10] !== '') {
+      const parsedX = parseFloat(parts[10]);
+      if (!isNaN(parsedX)) sectionTextX = parsedX;
+    }
+    if (parts.length > 11 && parts[11] !== '') {
+      const parsedY = parseFloat(parts[11]);
+      if (!isNaN(parsedY)) sectionTextY = parsedY;
+    }
+    if (parts.length > 12) {
+      sectionShowFrame = parts[12] !== '0';
     }
   }
 
@@ -117,7 +139,12 @@ function parseProjectRow(row: SupabaseProjectRow): PortfolioItem {
     sectionBorder: isSection ? sectionBorder : undefined,
     sectionShowBar: isSection ? sectionShowBar : undefined,
     sectionFontSize: isSection ? sectionFontSize : undefined,
-    sectionAlign: isSection ? sectionAlign : undefined
+    sectionAlign: isSection ? sectionAlign : undefined,
+    sectionBannerType: isSection ? sectionBannerType : undefined,
+    sectionHideTitle: isSection ? sectionHideTitle : undefined,
+    sectionTextX: isSection ? sectionTextX : undefined,
+    sectionTextY: isSection ? sectionTextY : undefined,
+    sectionShowFrame: isSection ? sectionShowFrame : undefined
   };
 }
 
@@ -347,12 +374,23 @@ export async function createSectionInSupabase(params: {
   sectionShowBar?: boolean;
   sectionFontSize?: string;
   sectionAlign?: 'left' | 'center' | 'right';
+  imageUrl?: string;
+  sectionBannerType?: 'text' | 'image';
+  sectionHideTitle?: boolean;
+  sectionTextX?: number;
+  sectionTextY?: number;
+  sectionShowFrame?: boolean;
 }): Promise<{ success: boolean; item?: PortfolioItem; error?: string }> {
   const supabase = getSupabaseClient();
   const showBarStr = params.sectionShowBar === false ? '0' : '1';
   const fontSizeStr = params.sectionFontSize || '1.28rem';
   const alignStr = params.sectionAlign || 'left';
-  const encodedCategory = `SECTION:::${params.sectionBg}:::${params.sectionColor}:::${params.sectionBorder || '#e5e7eb'}:::${showBarStr}:::${fontSizeStr}:::${alignStr}:::Section`;
+  const bannerTypeStr = params.sectionBannerType || (params.imageUrl ? 'image' : 'text');
+  const hideTitleStr = params.sectionHideTitle ? '1' : '0';
+  const textXStr = params.sectionTextX !== undefined ? params.sectionTextX.toString() : '';
+  const textYStr = params.sectionTextY !== undefined ? params.sectionTextY.toString() : '';
+  const showFrameStr = params.sectionShowFrame === false ? '0' : '1';
+  const encodedCategory = `SECTION:::${params.sectionBg}:::${params.sectionColor}:::${params.sectionBorder || '#e5e7eb'}:::${showBarStr}:::${fontSizeStr}:::${alignStr}:::Section:::${bannerTypeStr}:::${hideTitleStr}:::${textXStr}:::${textYStr}:::${showFrameStr}`;
   
   if (!supabase) {
     const fallbackItem: PortfolioItem = {
@@ -360,7 +398,7 @@ export async function createSectionInSupabase(params: {
       title: params.title.trim(),
       category: 'Section',
       description: '',
-      imageUrl: '',
+      imageUrl: params.imageUrl || '',
       pdfUrl: '',
       fileName: '',
       link: '',
@@ -372,7 +410,12 @@ export async function createSectionInSupabase(params: {
       sectionBorder: params.sectionBorder || '#e5e7eb',
       sectionShowBar: params.sectionShowBar !== false,
       sectionFontSize: fontSizeStr,
-      sectionAlign: (params.sectionAlign || 'left')
+      sectionAlign: (params.sectionAlign || 'left'),
+      sectionBannerType: bannerTypeStr,
+      sectionHideTitle: params.sectionHideTitle || false,
+      sectionTextX: params.sectionTextX,
+      sectionTextY: params.sectionTextY,
+      sectionShowFrame: params.sectionShowFrame !== false
     };
     return { success: true, item: fallbackItem };
   }
@@ -387,7 +430,7 @@ export async function createSectionInSupabase(params: {
           description: '',
           file_name: '',
           pdf_url: '',
-          image_url: ''
+          image_url: params.imageUrl || ''
         }
       ])
       .select()
@@ -400,7 +443,7 @@ export async function createSectionInSupabase(params: {
         title: params.title.trim(),
         category: 'Section',
         description: '',
-        imageUrl: '',
+        imageUrl: params.imageUrl || '',
         pdfUrl: '',
         fileName: '',
         link: '',
@@ -412,7 +455,12 @@ export async function createSectionInSupabase(params: {
         sectionBorder: params.sectionBorder || '#e5e7eb',
         sectionShowBar: params.sectionShowBar !== false,
         sectionFontSize: fontSizeStr,
-        sectionAlign: (params.sectionAlign || 'left')
+        sectionAlign: (params.sectionAlign || 'left'),
+        sectionBannerType: bannerTypeStr,
+        sectionHideTitle: params.sectionHideTitle || false,
+        sectionTextX: params.sectionTextX,
+        sectionTextY: params.sectionTextY,
+        sectionShowFrame: params.sectionShowFrame !== false
       };
       return { success: true, item: fallbackItem };
     }
@@ -422,7 +470,7 @@ export async function createSectionInSupabase(params: {
       title: inserted.title,
       category: 'Section',
       description: '',
-      imageUrl: '',
+      imageUrl: inserted.image_url || params.imageUrl || '',
       pdfUrl: '',
       fileName: '',
       link: '',
@@ -434,7 +482,12 @@ export async function createSectionInSupabase(params: {
       sectionBorder: params.sectionBorder || '#e5e7eb',
       sectionShowBar: params.sectionShowBar !== false,
       sectionFontSize: fontSizeStr,
-      sectionAlign: (params.sectionAlign || 'left')
+      sectionAlign: (params.sectionAlign || 'left'),
+      sectionBannerType: bannerTypeStr,
+      sectionHideTitle: params.sectionHideTitle || false,
+      sectionTextX: params.sectionTextX,
+      sectionTextY: params.sectionTextY,
+      sectionShowFrame: params.sectionShowFrame !== false
     };
 
     return { success: true, item: newItem };
@@ -461,6 +514,7 @@ export async function updateProjectInSupabase(params: {
   linkUrl?: string;
   newFile?: File | null;
   subItems?: PortfolioItem['subItems'];
+  imageUrl?: string;
 }): Promise<{ success: boolean; item?: PortfolioItem; error?: string }> {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -478,6 +532,10 @@ export async function updateProjectInSupabase(params: {
       description: descToSave,
       category: params.category || 'PDF Document'
     };
+
+    if (params.imageUrl !== undefined) {
+      updatePayload.image_url = params.imageUrl;
+    }
 
     if (params.linkUrl !== undefined) {
       updatePayload.pdf_url = params.linkUrl.trim();
@@ -567,6 +625,11 @@ export async function updateProjectInSupabase(params: {
     let sectionShowBar = true;
     let sectionFontSize = '1.28rem';
     let sectionAlign: 'left' | 'center' | 'right' = 'left';
+    let sectionBannerType: 'text' | 'image' = (params.imageUrl || (row && row.image_url)) ? 'image' : 'text';
+    let sectionHideTitle = false;
+    let sectionTextX: number | undefined = undefined;
+    let sectionTextY: number | undefined = undefined;
+    let sectionShowFrame = true;
     let realCategory = rowCategory;
 
     if (rowCategory.startsWith('SECTION:::')) {
@@ -582,16 +645,37 @@ export async function updateProjectInSupabase(params: {
       } else {
         realCategory = parts[4] || 'Section';
       }
+      if (parts.length > 8 && (parts[8] === 'image' || parts[8] === 'text')) {
+        sectionBannerType = parts[8] as 'text' | 'image';
+      }
+      if (parts.length > 9) {
+        sectionHideTitle = parts[9] === '1';
+      }
+      if (parts.length > 10 && parts[10] !== '') {
+        const parsedX = parseFloat(parts[10]);
+        if (!isNaN(parsedX)) sectionTextX = parsedX;
+      }
+      if (parts.length > 11 && parts[11] !== '') {
+        const parsedY = parseFloat(parts[11]);
+        if (!isNaN(parsedY)) sectionTextY = parsedY;
+      }
+      if (parts.length > 12) {
+        sectionShowFrame = parts[12] !== '0';
+      }
     }
+
+    const finalImageUrl = params.imageUrl !== undefined
+      ? params.imageUrl
+      : ((row && row.image_url && !row.image_url.includes('unsplash.com'))
+          ? row.image_url
+          : (isSection ? '' : '/banner.png'));
 
     const updatedItem: PortfolioItem = {
       id: params.id,
       title: updatePayload.title,
       category: realCategory,
       description: params.description?.trim() || '',
-      imageUrl: (row && row.image_url && !row.image_url.includes('unsplash.com'))
-        ? row.image_url
-        : (isSection ? '' : '/banner.png'),
+      imageUrl: finalImageUrl,
       pdfUrl: updatePayload.pdf_url || (row ? row.pdf_url : ''),
       fileName: updatePayload.file_name || (row ? row.file_name : ''),
       link: updatePayload.pdf_url || (row ? row.pdf_url : ''),
@@ -604,7 +688,12 @@ export async function updateProjectInSupabase(params: {
       sectionBorder: isSection ? sectionBorder : undefined,
       sectionShowBar: isSection ? sectionShowBar : undefined,
       sectionFontSize: isSection ? sectionFontSize : undefined,
-      sectionAlign: isSection ? sectionAlign : undefined
+      sectionAlign: isSection ? sectionAlign : undefined,
+      sectionBannerType: isSection ? sectionBannerType : undefined,
+      sectionHideTitle: isSection ? sectionHideTitle : undefined,
+      sectionTextX: isSection ? sectionTextX : undefined,
+      sectionTextY: isSection ? sectionTextY : undefined,
+      sectionShowFrame: isSection ? sectionShowFrame : undefined
     };
 
     return { success: true, item: updatedItem };

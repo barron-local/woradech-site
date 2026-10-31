@@ -73,7 +73,7 @@ export const AdminPinModal: React.FC<AdminPinModalProps> = ({ onSuccess, onCance
         borderRadius: 'var(--radius-md)',
         width: '100%',
         maxWidth: '400px',
-        padding: '32px 28px',
+        padding: 'min(32px, 6vw) min(24px, 5vw)',
         boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
         textAlign: 'center'
       }}>
@@ -93,7 +93,7 @@ export const AdminPinModal: React.FC<AdminPinModalProps> = ({ onSuccess, onCance
           <KeyRound size={24} strokeWidth={2} />
         </div>
 
-        <h2 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--notion-text)', marginBottom: '24px' }}>
+        <h2 style={{ fontSize: 'clamp(1.15rem, 4vw, 1.35rem)', fontWeight: 700, color: 'var(--notion-text)', marginBottom: '24px' }}>
           กรอกรหัส PIN ผู้ดูแลระบบ
         </h2>
 
@@ -117,7 +117,7 @@ export const AdminPinModal: React.FC<AdminPinModalProps> = ({ onSuccess, onCance
         )}
 
         {/* 4 Digit Boxes */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '28px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 'min(12px, 2.5vw)', marginBottom: '28px' }}>
           {pin.map((digit, idx) => (
             <input
               key={idx}
@@ -132,9 +132,9 @@ export const AdminPinModal: React.FC<AdminPinModalProps> = ({ onSuccess, onCance
               onChange={(e) => handleChange(idx, e.target.value)}
               onKeyDown={(e) => handleKeyDown(idx, e)}
               style={{
-                width: '56px',
-                height: '62px',
-                fontSize: '1.8rem',
+                width: 'min(56px, 17vw)',
+                height: 'min(62px, 19vw)',
+                fontSize: 'clamp(1.3rem, 5vw, 1.8rem)',
                 textAlign: 'center',
                 fontWeight: 700,
                 borderRadius: 'var(--radius-xs)',

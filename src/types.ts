@@ -32,6 +32,11 @@ export interface PortfolioItem {
   sectionShowBar?: boolean;
   sectionFontSize?: string;
   sectionAlign?: 'left' | 'center' | 'right';
+  sectionBannerType?: 'text' | 'image';
+  sectionHideTitle?: boolean;
+  sectionTextX?: number;
+  sectionTextY?: number;
+  sectionShowFrame?: boolean;
 }
 
 export interface EducationItem {
