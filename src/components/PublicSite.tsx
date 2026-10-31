@@ -20,8 +20,7 @@ import {
   Moon,
   BookOpen,
   ExternalLink,
-  FolderOpen,
-  Lock
+  FolderOpen
 } from 'lucide-react';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
 import { PdfDocViewer } from './PdfDocViewer';
@@ -45,7 +44,6 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
   config,
   currentPage,
   onNavigate,
-  onOpenEditor,
   isInitialLoading = false
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -412,34 +410,6 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             >
               {config.navLinks.portfolio}
             </button>
-
-            {onOpenEditor && (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenEditor();
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: '1px dashed var(--notion-border)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                  fontWeight: 500,
-                  color: 'var(--notion-text-muted)',
-                  fontSize: '0.88rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  marginTop: '4px'
-                }}
-              >
-                <Lock size={15} />
-                <span>เข้าสู่ระบบจัดการ (Admin)</span>
-              </button>
-            )}
-
           </div>
         )}
       </header>
@@ -1292,31 +1262,6 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
           <div style={{ fontSize: '0.9rem', color: 'var(--notion-text-muted)' }}>
             วิทยาลัยเทคนิคนครศรีธรรมราช
           </div>
-
-          {onOpenEditor && (
-            <button
-              onClick={onOpenEditor}
-              style={{
-                marginTop: '12px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.78rem',
-                color: 'var(--notion-text-muted)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                opacity: 0.7,
-                transition: 'opacity 0.2s'
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
-              title="เข้าสู่หน้าผู้ดูแลระบบ (/admin)"
-            >
-              <Lock size={12} />
-              <span>จัดการเว็บไซต์ (Admin)</span>
-            </button>
-          )}
         </div>
       </footer>
 
