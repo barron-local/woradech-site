@@ -12,6 +12,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
     "@types/three": "^0.186.0",
+    "docx-preview": "^0.4.1",
+    "html2canvas": "^1.4.1",
     "lucide-react": "^1.59.0",
     "motion": "^14.4.0",
     "pdfjs-dist": "^6.4.299",

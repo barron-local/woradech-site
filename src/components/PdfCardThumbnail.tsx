@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, ExternalLink, Presentation } from 'lucide-react';
 import { renderPdfFirstPageToImage } from '../utils/pdfThumbnail';
+import { renderDocxFirstPageToImage } from '../utils/docxThumbnail';
 import { isCanvaUrl, toCanvaEmbedUrl } from '../utils/embedHelper';
 
 interface PdfCardThumbnailProps {
@@ -20,13 +21,38 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
   const [canvaLoaded, setCanvaLoaded] = useState<boolean>(false);
 
   const isCanva = isCanvaUrl(pdfUrl) || isCanvaUrl(imageUrl);
-  const isGenericLink = !!pdfUrl && !pdfUrl.includes('portfolio-docs') && !pdfUrl.endsWith('.pdf') && !pdfUrl.startsWith('data:');
+  const isDoc = !!(pdfUrl && /\.(doc|docx)($|\?)/i.test(pdfUrl)) || !!(imageUrl && /\.(doc|docx)($|\?)/i.test(imageUrl)) || /\.(doc|docx)$/i.test(title);
+  const isGenericLink = !!pdfUrl && !isDoc && !pdfUrl.includes('portfolio-docs') && !pdfUrl.endsWith('.pdf') && !pdfUrl.startsWith('data:');
 
-  const isUnsplashDefault = !imageUrl || imageUrl.includes('unsplash.com');
-  const hasValidPdf = !!pdfUrl && (pdfUrl.includes('.pdf') || pdfUrl.startsWith('data:application/pdf') || pdfUrl.includes('portfolio-docs'));
+  const isUnsplashDefault = !imageUrl || imageUrl.includes('unsplash.com') || imageUrl === '/banner.png';
+  const isDocx = !!(pdfUrl && /\.docx($|\?)/i.test(pdfUrl)) || !!(imageUrl && /\.docx($|\?)/i.test(imageUrl)) || /\.docx$/i.test(title);
+  const hasValidPdf = !!pdfUrl && !isDoc && (pdfUrl.includes('.pdf') || pdfUrl.startsWith('data:application/pdf') || pdfUrl.includes('portfolio-docs'));
 
   useEffect(() => {
-    // If the imageUrl is an Unsplash placeholder or missing, but we have a PDF url, render page 1 on the fly
+    // 1. If DOCX file, render first page dynamically using docx-preview + html2canvas
+    if (isDocx && pdfUrl && isUnsplashDefault && !renderedThumb) {
+      let isMounted = true;
+      setIsLoading(true);
+
+      renderDocxFirstPageToImage(pdfUrl)
+        .then((dataUrl) => {
+          if (isMounted) {
+            if (dataUrl) {
+              setRenderedThumb(dataUrl);
+            }
+            setIsLoading(false);
+          }
+        })
+        .catch(() => {
+          if (isMounted) setIsLoading(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    // 2. If PDF file, render page 1 on the fly
     if (isUnsplashDefault && hasValidPdf && !renderedThumb) {
       let isMounted = true;
       setIsLoading(true);
@@ -48,7 +74,7 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
         isMounted = false;
       };
     }
-  }, [imageUrl, pdfUrl, isUnsplashDefault, hasValidPdf]);
+  }, [imageUrl, pdfUrl, isUnsplashDefault, hasValidPdf, isDocx]);
 
   // 1. Canva Presentation Live Slide / Thumbnail Preview (Prioritized so no broken image or placeholder flashes)
   if (isCanva) {
@@ -141,8 +167,9 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
     );
   }
 
-  // 2. Normal Image / Rendered PDF first-page thumbnail
-  const displaySrc = renderedThumb || (imageUrl && !isUnsplashDefault ? imageUrl : null);
+  // 2. Normal Image / Rendered Thumbnail (Image / PDF first page / DOCX first page)
+  const isBannerDefault = !imageUrl || imageUrl.includes('unsplash.com') || imageUrl === '/banner.png';
+  const displaySrc = renderedThumb || (imageUrl && !isBannerDefault ? imageUrl : null);
 
   if (displaySrc && !hasError) {
     return (
@@ -157,6 +184,59 @@ export const PdfCardThumbnail: React.FC<PdfCardThumbnailProps> = ({
         }}
         onError={() => setHasError(true)}
       />
+    );
+  }
+
+  // 3. Word Document Preview Card (Fallback when thumbnail rendering is in-progress or for binary .doc)
+  if (isDoc) {
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundColor: '#f8fafc',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+          position: 'relative',
+          userSelect: 'none'
+        }}
+      >
+        <div
+          style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '10px',
+            backgroundColor: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '2px',
+            boxShadow: '0 2px 6px rgba(37, 99, 235, 0.08)'
+          }}
+        >
+          <FileText size={20} color="#2563eb" />
+          <span
+            style={{
+              fontSize: '0.58rem',
+              fontWeight: 800,
+              color: '#1e40af',
+              letterSpacing: '0.04em'
+            }}
+          >
+            DOC
+          </span>
+        </div>
+        {isLoading && (
+          <span style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '6px' }}>
+            กำลังเรนเดอร์หน้าแรก...
+          </span>
+        )}
+      </div>
     );
   }
 

@@ -141,8 +141,12 @@ export const UploadPage: React.FC<UploadPageProps> = ({
 
   const isAcceptedFile = (file: File) => {
     const ext = (file.name.split('.').pop() || '').toLowerCase();
-    const validExts = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
-    return file.type === 'application/pdf' || file.type.startsWith('image/') || validExts.includes(ext);
+    const validExts = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
+    return file.type === 'application/pdf' || 
+      file.type.startsWith('image/') || 
+      file.type === 'application/msword' || 
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
+      validExts.includes(ext);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,7 +154,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     if (!file) return;
 
     if (!isAcceptedFile(file)) {
-      setErrorMessage('กรุณาเลือกไฟล์เอกสาร PDF หรือรูปภาพ (JPG, PNG, WebP) เท่านั้น');
+      setErrorMessage('กรุณาเลือกไฟล์ PDF, Word (.doc, .docx) หรือรูปภาพ (JPG, PNG, WebP) เท่านั้น');
       return;
     }
 
@@ -165,9 +169,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({
       isImage
     });
 
-    if (!title) {
-      setTitle(file.name.replace(/\.[^/.]+$/, ''));
-    }
+    // Always update title to new selected file name
+    setTitle(file.name.replace(/\.[^/.]+$/, ''));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -414,7 +417,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     if (!file) return;
 
     if (!isAcceptedFile(file)) {
-      setEditError('กรุณาเลือกไฟล์เอกสาร PDF หรือรูปภาพ (JPG, PNG, WebP) เท่านั้น');
+      setEditError('กรุณาเลือกไฟล์ PDF, Word (.doc, .docx) หรือรูปภาพ (JPG, PNG, WebP) เท่านั้น');
       return;
     }
 
@@ -428,6 +431,9 @@ export const UploadPage: React.FC<UploadPageProps> = ({
       size: `${sizeInMb} MB`,
       isImage
     });
+
+    // Auto-update edit title to match replaced file name
+    setEditTitle(file.name.replace(/.[^/.]+$/, ''));
   };
 
   const handleSaveEdit = async () => {
@@ -689,7 +695,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           }}
         >
           <UploadCloud size={16} />
-          <span className="upload-tab-text-full">อัปโหลดไฟล์ (PDF / รูปภาพ)</span>
+          <span className="upload-tab-text-full">อัปโหลดไฟล์ (PDF / Word / รูปภาพ)</span>
           <span className="upload-tab-text-short">อัปโหลดไฟล์</span>
         </button>
 
@@ -1801,6 +1807,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: 600, color: 'var(--notion-text)', fontSize: '0.92rem' }}>
                     {selectedFileInfo.isImage ? (
                       <ImageIcon size={16} color="#2563eb" />
+                    ) : /\.(doc|docx)$/i.test(selectedFileInfo.name) ? (
+                      <FileText size={16} color="#2563eb" />
                     ) : (
                       <FileText size={16} color="#dc2626" />
                     )}
@@ -1811,16 +1819,16 @@ export const UploadPage: React.FC<UploadPageProps> = ({
               ) : (
                 <div>
                   <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--notion-text)' }}>
-                    คลิกเพื่อเลือกไฟล์ PDF หรือ รูปภาพ จากเครื่อง
+                    คลิกเพื่อเลือกไฟล์ PDF, Word (.doc, .docx) หรือ รูปภาพ จากเครื่อง
                   </span>
                   <p style={{ fontSize: '0.78rem', color: 'var(--notion-text-muted)', marginTop: '4px' }}>
-                    รองรับไฟล์ .pdf, .jpg, .png, .webp
+                    รองรับไฟล์ .pdf, .doc, .docx, .jpg, .png, .webp
                   </p>
                 </div>
               )}
               <input
                 type="file"
-                accept=".pdf,application/pdf,image/*"
+                accept=".pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,image/*"
                 onChange={handleFileChange}
                 style={{ display: 'none' }}
               />
@@ -2123,6 +2131,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                           }}>
                             {item.imageUrl && item.sectionBannerType !== 'text' ? 'ภาพแบนเนอร์' : 'ป้ายกำกับหน่วย'}
                           </span>
+
                         </div>
                       </div>
                     </div>
@@ -3248,13 +3257,13 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                             คลิกเพื่ออัปโหลดไฟล์ใหม่แทนที่ไฟล์เดิม
                           </div>
                           <div style={{ fontSize: '0.76rem', color: 'var(--notion-text-muted)', marginTop: '2px' }}>
-                            รองรับทั้ง PDF หรือ รูปภาพ (.pdf, .jpg, .png, .webp)
+                            รองรับทั้ง PDF, Word (.doc, .docx) หรือ รูปภาพ
                           </div>
                         </div>
                       )}
                       <input
                         type="file"
-                        accept=".pdf,application/pdf,image/*"
+                        accept=".pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,image/*"
                         onChange={handleEditFileChange}
                         style={{ display: 'none' }}
                       />
@@ -3405,7 +3414,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                                   )}
                                   <input
                                     type="file"
-                                    accept=".pdf,application/pdf,image/*"
+                                    accept=".pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,image/*"
                                     disabled={uploadingSubIndex === sIdx}
                                     style={{ display: 'none' }}
                                     onChange={async (e) => {

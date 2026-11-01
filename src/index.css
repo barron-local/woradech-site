@@ -1,4 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+@font-face {
+  font-family: 'TH Sarabun New';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('TH Sarabun New'), local('THSarabunNew'), local('TH Sarabun PSK'), local('Sarabun');
+}
 
 :root {
   /* Notion Light & Clean Palette */
@@ -218,15 +226,30 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--notion-text-muted);
 }
 
-/* Glassmorphism Header */
+/* Floating Island Glassmorphism Header */
 .navbar-header {
-  background-color: rgba(255, 255, 255, 0.85);
-  border-bottom: 1px solid var(--notion-border);
+  position: sticky;
+  top: clamp(14px, 3.5vw, 36px);
+  z-index: 1000;
+  max-width: 1040px;
+  margin: 0 auto;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+  height: 54px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  width: calc(100% - 28px);
 }
 
 [data-theme="dark"] .navbar-header {
-  background-color: rgba(25, 25, 25, 0.85);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba(25, 25, 25, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .desktop-nav {
@@ -234,9 +257,14 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
+.mobile-drawer {
+  border-radius: 20px;
+  border: 1px solid var(--notion-border) !important;
+}
+
 [data-theme="dark"] .mobile-drawer {
   background-color: rgba(25, 25, 25, 0.96) !important;
-  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 [data-theme="dark"] .search-suggestions-dropdown {
@@ -276,6 +304,54 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ========================================================
+   UPLOAD PAGE & ADMIN SEGMENTED TABS (Notion Modern Design)
+   ======================================================== */
+.upload-mode-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--notion-sidebar);
+  border: 1px solid var(--notion-border);
+  border-radius: var(--radius-sm);
+  padding: 5px;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.upload-mode-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: var(--radius-xs);
+  border: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.upload-mode-tab-btn:hover:not(.active) {
+  background-color: var(--notion-hover) !important;
+  color: var(--notion-text) !important;
+}
+
+[data-theme="dark"] .upload-mode-tabs {
+  background-color: #202020;
+  border-color: #2e2e2e;
+}
+
+[data-theme="dark"] .upload-mode-tab-btn.active {
+  background-color: #2c2c2c !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ========================================================
    RESPONSIVE DESIGN (100% Mobile, Tablet & Desktop Support)
    ======================================================== */
 
@@ -306,6 +382,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (max-width: 768px) {
+  .navbar-header {
+    top: 14px !important;
+    width: calc(100% - 20px) !important;
+  }
+  .search-scroll-target {
+    scroll-margin-top: 76px !important;
+  }
   .search-mobile-input-bar {
     display: block !important;
   }
@@ -325,7 +408,7 @@ h1, h2, h3, h4, h5, h6 {
   }
   .search-suggestions-dropdown {
     position: fixed !important;
-    top: 58px !important;
+    top: 74px !important;
     left: 16px !important;
     right: 16px !important;
     width: auto !important;
@@ -732,7 +815,7 @@ h1, h2, h3, h4, h5, h6 {
    SEARCH SCROLL TARGET
    ======================================================== */
 .search-scroll-target {
-  scroll-margin-top: 72px !important;
+  scroll-margin-top: clamp(76px, 10vw, 104px) !important;
 }
 
 /* ========================================================
@@ -872,4 +955,10 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(37, 99, 235, 0.35);
   background: var(--notion-bg);
   box-shadow: 0 1px 4px rgba(37, 99, 235, 0.08), 0 6px 20px rgba(37, 99, 235, 0.05);
+}
+
+
+/* Smooth theme transition without jarring flash */
+body, .navbar-header, .desktop-nav, .mobile-drawer {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }

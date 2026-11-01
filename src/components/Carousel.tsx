@@ -50,16 +50,42 @@ export const Carousel: React.FC<CarouselProps> = ({
     }
   };
 
-  // 3. Autoplay timer (pauses when hovered or user is interacting)
+  // 3. Autoplay timer with pause/resume support
+  const remainingTimeRef = useRef<number>(interval);
+  const startTimeRef = useRef<number>(Date.now());
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reset timer duration when slide changes or interval changes
   useEffect(() => {
-    if (!autoplay || slides.length <= 1 || isPaused) return;
+    remainingTimeRef.current = interval;
+    startTimeRef.current = Date.now();
+  }, [currentIndex, interval]);
 
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slides.length);
-    }, interval);
+  useEffect(() => {
+    if (!autoplay || slides.length <= 1) return;
 
-    return () => clearInterval(timer);
-  }, [autoplay, interval, slides.length, isPaused, currentIndex]);
+    if (isPaused) {
+      // Calculate how much time had passed before pause
+      const elapsed = Date.now() - startTimeRef.current;
+      remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    } else {
+      // Resume timer with the remaining time
+      startTimeRef.current = Date.now();
+      timerRef.current = setTimeout(() => {
+        setCurrentIndex((prev) => (prev + 1) % slides.length);
+      }, remainingTimeRef.current);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [autoplay, slides.length, isPaused, currentIndex]);
 
   // 4. Touch swipe gesture handling
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -291,13 +317,14 @@ export const Carousel: React.FC<CarouselProps> = ({
               }}
             >
               <div
-                key={`${currentIndex}-${isPaused}`}
+                key={currentIndex}
                 style={{
                   height: '100%',
                   backgroundColor: '#ffffff',
                   boxShadow: '0 0 8px rgba(255, 255, 255, 0.75)',
-                  width: isPaused ? '0%' : '100%',
-                  animation: isPaused ? 'none' : `carouselProgress ${interval}ms linear forwards`
+                  width: '0%',
+                  animation: `carouselProgress ${interval}ms linear forwards`, 
+                  animationPlayState: isPaused ? 'paused' : 'running'
                 }}
               />
             </div>

@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { PortfolioItem, SiteConfig } from './types';
 import { renderPdfFirstPageToImage, dataUrlToBlob } from './utils/pdfThumbnail';
+import { renderDocxFirstPageToImage } from './utils/docxThumbnail';
 
 // Read all credentials directly from environment variables (.env)
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://srpytprcobmufxqrkzio.supabase.co';
@@ -124,9 +125,9 @@ function parseProjectRow(row: SupabaseProjectRow): PortfolioItem {
     title: row.title,
     category: realCategory,
     description: finalDescription,
-    imageUrl: (row.image_url && !row.image_url.includes('unsplash.com'))
+    imageUrl: (row.image_url && !row.image_url.includes('unsplash.com') && row.image_url !== '/banner.png')
       ? row.image_url
-      : (isSection ? '' : '/banner.png'),
+      : '',
     pdfUrl: row.pdf_url,
     fileName: row.file_name,
     link: row.pdf_url,
@@ -163,9 +164,15 @@ export async function uploadProjectToSupabase(params: {
   try {
     const fileExt = (params.file.name.split('.').pop() || '').toLowerCase();
     const isImage = params.file.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(fileExt);
+    const isDoc = ['doc', 'docx'].includes(fileExt);
     const cleanFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
     const filePath = `documents/${cleanFileName}`;
-    const contentType = isImage ? (params.file.type || 'image/jpeg') : 'application/pdf';
+    let contentType = isImage ? (params.file.type || 'image/jpeg') : 'application/pdf';
+    if (fileExt === 'docx') {
+      contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    } else if (fileExt === 'doc') {
+      contentType = 'application/msword';
+    }
 
     let publicFileUrl = '';
     const { error: uploadError } = await supabase.storage
@@ -187,10 +194,16 @@ export async function uploadProjectToSupabase(params: {
 
     let coverImageUrl = isImage ? publicFileUrl : '';
 
-    // If PDF, render the first page as thumbnail image
+    // If PDF or DOCX, render the first page as thumbnail image
     if (!isImage) {
       try {
-        const thumbDataUrl = await renderPdfFirstPageToImage(params.file);
+        let thumbDataUrl: string | null = null;
+        if (fileExt === 'docx') {
+          thumbDataUrl = await renderDocxFirstPageToImage(params.file);
+        } else if (!isDoc) {
+          thumbDataUrl = await renderPdfFirstPageToImage(params.file);
+        }
+
         if (thumbDataUrl) {
           const thumbBlob = dataUrlToBlob(thumbDataUrl);
           if (thumbBlob) {
@@ -213,7 +226,7 @@ export async function uploadProjectToSupabase(params: {
           }
         }
       } catch (thumbError) {
-        console.warn('PDF thumbnail generation note:', thumbError);
+        console.warn('Document thumbnail generation note:', thumbError);
       }
     }
 
@@ -221,7 +234,7 @@ export async function uploadProjectToSupabase(params: {
       ? publicFileUrl
       : '');
 
-    const itemCategory = params.category || (isImage ? 'Image' : 'PDF Document');
+    const itemCategory = params.category || (isImage ? 'Image' : isDoc ? 'Word Document' : 'PDF Document');
 
     // Never insert megabytes of base64 directly into PostgreSQL row because it causes PostgREST statement timeout (57014)
     const isDataUrl = publicFileUrl.startsWith('data:');
@@ -548,9 +561,15 @@ export async function updateProjectInSupabase(params: {
     if (params.newFile) {
       const fileExt = (params.newFile.name.split('.').pop() || '').toLowerCase();
       const isImage = params.newFile.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(fileExt);
+      const isDoc = ['doc', 'docx'].includes(fileExt);
       const cleanFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
       const filePath = `documents/${cleanFileName}`;
-      const contentType = isImage ? (params.newFile.type || 'image/jpeg') : 'application/pdf';
+      let contentType = isImage ? (params.newFile.type || 'image/jpeg') : 'application/pdf';
+      if (fileExt === 'docx') {
+        contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      } else if (fileExt === 'doc') {
+        contentType = 'application/msword';
+      }
 
       const { error: uploadError } = await supabase.storage
         .from('portfolio-docs')
@@ -569,9 +588,18 @@ export async function updateProjectInSupabase(params: {
           updatePayload.image_url = urlData.publicUrl;
           updatePayload.category = 'Image';
         } else {
-          // Render PDF first page thumbnail and upload
+          if (isDoc) {
+            updatePayload.category = 'Word Document';
+          }
+          // Render PDF or DOCX first page thumbnail and upload
           try {
-            const thumbDataUrl = await renderPdfFirstPageToImage(params.newFile);
+            let thumbDataUrl: string | null = null;
+            if (fileExt === 'docx') {
+              thumbDataUrl = await renderDocxFirstPageToImage(params.newFile);
+            } else if (!isDoc) {
+              thumbDataUrl = await renderPdfFirstPageToImage(params.newFile);
+            }
+
             if (thumbDataUrl) {
               const thumbBlob = dataUrlToBlob(thumbDataUrl);
               if (thumbBlob) {
@@ -592,7 +620,7 @@ export async function updateProjectInSupabase(params: {
               }
             }
           } catch (tErr) {
-            console.warn('Edit PDF thumbnail generation note:', tErr);
+            console.warn('Edit document thumbnail generation note:', tErr);
           }
         }
       } else {
@@ -666,9 +694,9 @@ export async function updateProjectInSupabase(params: {
 
     const finalImageUrl = params.imageUrl !== undefined
       ? params.imageUrl
-      : ((row && row.image_url && !row.image_url.includes('unsplash.com'))
+      : ((row && row.image_url && !row.image_url.includes('unsplash.com') && row.image_url !== '/banner.png')
           ? row.image_url
-          : (isSection ? '' : '/banner.png'));
+          : '');
 
     const updatedItem: PortfolioItem = {
       id: params.id,
@@ -761,7 +789,14 @@ export async function uploadAssetToSupabase(file: Blob | File, folder: string = 
       ? (file.name.split('.').pop() || 'jpg').toLowerCase()
       : 'jpg';
     const filePath = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
-    const contentType = (file.type && file.type.startsWith('image/')) ? file.type : 'image/jpeg';
+    let contentType = (file.type && file.type.startsWith('image/')) ? file.type : 'application/pdf';
+    if (ext === 'docx') {
+      contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    } else if (ext === 'doc') {
+      contentType = 'application/msword';
+    } else if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext)) {
+      contentType = file.type || 'image/jpeg';
+    }
 
     const { error } = await supabase.storage
       .from('portfolio-docs')

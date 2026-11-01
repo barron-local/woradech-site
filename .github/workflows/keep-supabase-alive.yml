@@ -1,0 +1,24 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # รันอัตโนมัติทุกๆ 2 วัน เวลา 04:00 UTC (11:00 น. เวลาไทย)
+    - cron: '0 4 */2 * *'
+  workflow_dispatch: # ปุ่มสำหรับกดสั่งรันด้วยตนเองบนหน้า GitHub เพื่อทดสอบ
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Database
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "https://srpytprcobmufxqrkzio.supabase.co/rest/v1/projects?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycHl0cHJjb2JtdWZ4cXJremlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNjEyODYsImV4cCI6MjEwNzkzNzI4Nn0.nBNiseCFPSwzIy8_Wn5H14HHL29vl1-KFB9alQnVCmQ' }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycHl0cHJjb2JtdWZ4cXJremlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNjEyODYsImV4cCI6MjEwNzkzNzI4Nn0.nBNiseCFPSwzIy8_Wn5H14HHL29vl1-KFB9alQnVCmQ' }}")
+          
+          echo "Supabase HTTP Status: $STATUS"
+          if [ "$STATUS" -eq 200 ]; then
+            echo "SUCCESS: Supabase is alive and active!"
+          else
+            echo "WARNING: Received status code $STATUS"
+          fi

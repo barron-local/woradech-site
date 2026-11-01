@@ -241,6 +241,9 @@ export const PdfDocViewer: React.FC<PdfDocViewerProps> = ({ url, title }) => {
     setActivePage(1);
     setZoom(1.0);
     setRotation(0);
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
 
     async function loadPdf() {
       try {
@@ -288,30 +291,39 @@ export const PdfDocViewer: React.FC<PdfDocViewerProps> = ({ url, title }) => {
     const container = containerRef.current;
     if (!container || numPages === 0) return;
 
-    const pageElements = container.querySelectorAll('.pdf-page-container');
-    if (!pageElements.length) return;
+    const handleScroll = () => {
+      const pageElements = container.querySelectorAll('.pdf-page-container');
+      if (!pageElements.length) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const pageNum = Number(entry.target.getAttribute('data-page-num'));
-            if (pageNum) {
-              setActivePage(pageNum);
-            }
-          }
+      const containerRect = container.getBoundingClientRect();
+      const targetY = containerRect.top + 80; // Focus line slightly below header
+
+      let closestPage = 1;
+      let minDistance = Infinity;
+
+      pageElements.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        // Distance from the top of the page element to target line
+        const distance = Math.abs(rect.top - targetY);
+        // If the element spans across targetY or is closest to targetY
+        if (rect.top <= targetY && rect.bottom >= targetY) {
+          closestPage = Number(el.getAttribute('data-page-num')) || 1;
+          minDistance = -1;
+        } else if (minDistance !== -1 && distance < minDistance) {
+          minDistance = distance;
+          closestPage = Number(el.getAttribute('data-page-num')) || 1;
         }
-      },
-      {
-        root: container,
-        threshold: 0.3
-      }
-    );
+      });
 
-    pageElements.forEach((el) => observer.observe(el));
+      setActivePage((prev) => (prev !== closestPage ? closestPage : prev));
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    // Initial check
+    handleScroll();
 
     return () => {
-      observer.disconnect();
+      container.removeEventListener('scroll', handleScroll);
     };
   }, [numPages, loading]);
 

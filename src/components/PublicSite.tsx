@@ -20,7 +20,11 @@ import {
   Moon,
   BookOpen,
   ExternalLink,
-  FolderOpen
+  FolderOpen,
+  Download,
+  GraduationCap,
+  Copy,
+  Check
 } from 'lucide-react';
 import { PdfCardThumbnail } from './PdfCardThumbnail';
 import { PdfDocViewer } from './PdfDocViewer';
@@ -28,6 +32,7 @@ import Folder from './Folder';
 import { NavbarSearch } from './NavbarSearch';
 import Lanyard from './Lanyard';
 import { isCanvaUrl, toCanvaEmbedUrl } from '../utils/embedHelper';
+import { motion } from 'motion/react';
 
 
 export type PageRoute = 'home' | 'about' | 'portfolio' | '404';
@@ -47,8 +52,76 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
   isInitialLoading = false
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [viewingPdf, setViewingPdf] = useState<{ url: string; title: string } | null>(null);
+  const [viewingPdf, setViewingPdf] = useState<{ url: string; title: string; docId?: string } | null>(null);
   const [isPdfFullscreen, setIsPdfFullscreen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 2500);
+  };
+
+  const handleCopyDocLink = (_url: string, title: string, docId?: string) => {
+    // Generate clean web portfolio deep link that opens this exact project modal
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareParam = docId ? ('doc=' + encodeURIComponent(docId)) : ('file=' + encodeURIComponent(title));
+    const shareLink = `${baseUrl}#portfolio?${shareParam}`;
+
+    navigator.clipboard.writeText(shareLink).then(() => {
+      showToast('คัดลอกลิงก์เปิดหน้านี้เรียบร้อยแล้ว!');
+    }).catch(() => {
+      // Fallback
+      prompt('คัดลอกลิงก์:', shareLink);
+    });
+  };
+
+  // Auto-open document modal if shared via deep link (e.g. #portfolio?doc=xxx or ?doc=xxx)
+  useEffect(() => {
+    const handleCheckDeepLink = () => {
+      const hash = window.location.hash;
+      const search = window.location.search;
+      let docTarget = '';
+
+      if (hash.includes('doc=')) {
+        const parts = hash.split('doc=');
+        if (parts[1]) docTarget = decodeURIComponent(parts[1].split('&')[0]);
+      } else if (hash.includes('file=')) {
+        const parts = hash.split('file=');
+        if (parts[1]) docTarget = decodeURIComponent(parts[1].split('&')[0]);
+      } else if (search.includes('doc=')) {
+        const params = new URLSearchParams(search);
+        docTarget = params.get('doc') || '';
+      }
+
+      if (docTarget && config.portfolio?.items?.length) {
+        // Find matching item by ID or Title or fileName
+        for (const item of config.portfolio.items) {
+          if (item.id === docTarget || item.title === docTarget || item.fileName === docTarget) {
+            const viewUrl = item.pdfUrl || item.link || item.imageUrl;
+            if (viewUrl) {
+              setViewingPdf({ url: viewUrl, title: item.title, docId: item.id });
+              return;
+            }
+          }
+          if (item.subItems) {
+            for (const sub of item.subItems) {
+              if (sub.title === docTarget || (sub.url && sub.url.includes(docTarget))) {
+                setViewingPdf({ url: sub.url, title: sub.title || item.title, docId: item.id });
+                return;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    handleCheckDeepLink();
+    window.addEventListener('hashchange', handleCheckDeepLink);
+    return () => window.removeEventListener('hashchange', handleCheckDeepLink);
+  }, [config.portfolio?.items]);
+
   const [activeFolderProject, setActiveFolderProject] = useState<import('../types').PortfolioItem | null>(null);
   const [isFolderOpen, setIsFolderOpen] = useState(false);
 
@@ -135,40 +208,71 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleDownloadFile = async (url: string, filename: string) => {
+    try {
+      if (url.startsWith('data:') || url.startsWith('blob:')) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename || 'download';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
+      }
+
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      let safeFilename = filename || 'download';
+      if (!safeFilename.includes('.')) {
+        if (blob.type.includes('pdf')) safeFilename += '.pdf';
+        else if (blob.type.includes('png')) safeFilename += '.png';
+        else if (blob.type.includes('jpeg') || blob.type.includes('jpg')) safeFilename += '.jpg';
+      }
+      a.download = safeFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.download = filename || 'download';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--notion-bg)', color: 'var(--notion-text)', display: 'flex', flexDirection: 'column', transition: 'background-color 0.25s ease, color 0.25s ease' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--notion-bg)', color: 'var(--notion-text)', display: 'flex', flexDirection: 'column' }}>
 
-      {/* 1. NAVIGATION BAR (Refined Minimalist Deluxe) */}
-      <header
-        className="navbar-header"
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          backdropFilter: 'blur(16px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 16px rgba(0, 0, 0, 0.02)',
-          height: '56px',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 24px',
-          transition: 'all 0.2s ease'
-        }}
-      >
-        <div style={{ maxWidth: '1080px', margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+      {/* 1. NAVIGATION BAR (Floating Dynamic Island Deluxe) */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 100, width: '100%', pointerEvents: 'none' }}>
+        <header
+          className="navbar-header"
+          style={{
+            pointerEvents: 'auto',
+            
+          }}
+        >
+          <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}>
 
-          {/* Logo and Name with Emerald Live Pulse */}
-          <div
-            onClick={() => handleNavClick('home')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              cursor: 'pointer',
-              userSelect: 'none',
-              flexShrink: 0
-            }}
-          >
+            {/* Logo and Name with Emerald Live Pulse */}
+            <div
+              onClick={() => handleNavClick('home')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                userSelect: 'none',
+                flexShrink: 0
+              }}
+            >
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -214,71 +318,71 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
               }}
             />
 
-            {/* Desktop Nav Items: Sliding Pill Container */}
+            {/* Desktop Nav Items: Smooth Sliding Pill Indicator */}
             <nav
               className="desktop-nav"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '2px',
-                backgroundColor: 'rgba(0, 0, 0, 0.035)',
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
                 padding: '3px',
                 borderRadius: '10px',
-                border: '1px solid rgba(0, 0, 0, 0.04)'
+                border: '1px solid rgba(0, 0, 0, 0.05)',
+                position: 'relative'
               }}
             >
-              <button
-                onClick={() => handleNavClick('home')}
-                style={{
-                  fontSize: '0.84rem',
-                  padding: '5px 14px',
-                  borderRadius: '7px',
-                  fontWeight: currentPage === 'home' ? 600 : 500,
-                  color: currentPage === 'home' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                  backgroundColor: currentPage === 'home' ? 'var(--notion-bg)' : 'transparent',
-                  boxShadow: currentPage === 'home' ? '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.05)' : 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-                }}
-              >
-                {config.navLinks.home}
-              </button>
-              <button
-                onClick={() => handleNavClick('about')}
-                style={{
-                  fontSize: '0.84rem',
-                  padding: '5px 14px',
-                  borderRadius: '7px',
-                  fontWeight: currentPage === 'about' ? 600 : 500,
-                  color: currentPage === 'about' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                  backgroundColor: currentPage === 'about' ? 'var(--notion-bg)' : 'transparent',
-                  boxShadow: currentPage === 'about' ? '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.05)' : 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-                }}
-              >
-                {config.navLinks.about}
-              </button>
-              <button
-                onClick={() => handleNavClick('portfolio')}
-                style={{
-                  fontSize: '0.84rem',
-                  padding: '5px 14px',
-                  borderRadius: '7px',
-                  fontWeight: currentPage === 'portfolio' ? 600 : 500,
-                  color: currentPage === 'portfolio' ? 'var(--notion-text)' : 'var(--notion-text-muted)',
-                  backgroundColor: currentPage === 'portfolio' ? 'var(--notion-bg)' : 'transparent',
-                  boxShadow: currentPage === 'portfolio' ? '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.05)' : 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-                }}
-              >
-                {config.navLinks.portfolio}
-              </button>
-
+              {[
+                { key: 'home', label: config.navLinks.home },
+                { key: 'about', label: config.navLinks.about },
+                { key: 'portfolio', label: config.navLinks.portfolio }
+              ].map((tab) => {
+                const isActive = currentPage === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => handleNavClick(tab.key as PageRoute)}
+                    style={{
+                      position: 'relative',
+                      fontSize: '0.84rem',
+                      padding: '6px 15px',
+                      borderRadius: '7px',
+                      fontWeight: isActive ? 600 : 500,
+                      color: isActive ? 'var(--notion-text)' : 'var(--notion-text-muted)',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      userSelect: 'none',
+                      transition: 'color 0.15s ease'
+                    }}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="active-nav-pill"
+                        transition={{
+                          type: 'spring',
+                          stiffness: 420,
+                          damping: 32,
+                          mass: 0.8
+                        }}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          borderRadius: '7px',
+                          backgroundColor: 'var(--notion-bg)',
+                          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.06)',
+                          zIndex: 0
+                        }}
+                      />
+                    )}
+                    <span style={{ position: 'relative', zIndex: 1 }}>
+                      {tab.label}
+                    </span>
+                  </button>
+                );
+              })}
             </nav>
 
             {/* Dark Mode Toggle Button */}
@@ -413,6 +517,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
           </div>
         )}
       </header>
+      </div>
 
       {/* ================= PAGE ROUTING ================= */}
       <main style={{ flex: 1 }}>
@@ -688,6 +793,84 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                       </div>
                       <div style={{ fontSize: '0.88rem', color: 'var(--notion-text-muted)' }}>
                         เบอร์โทรศัพท์: <a href="tel:0923729142" style={{ color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>092-372-9142</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. ข้อมูลครูที่ปรึกษา (Advisor) */}
+                <div id="about-advisor" className="notion-card search-scroll-target" style={{ padding: '28px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--notion-border)', paddingBottom: '12px' }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: 'var(--radius-xs)',
+                      backgroundColor: 'var(--notion-sidebar)',
+                      border: '1px solid var(--notion-border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--notion-text)'
+                    }}>
+                      <GraduationCap size={18} />
+                    </div>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
+                      ครูที่ปรึกษา
+                    </h2>
+                  </div>
+
+                  <div style={{
+                    backgroundColor: 'var(--notion-sidebar)',
+                    border: '1px solid var(--notion-border)',
+                    borderRadius: 'var(--radius-xs)',
+                    padding: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px',
+                    flexWrap: 'wrap'
+                  }}>
+                    {/* รูปถ่ายครูที่ปรึกษา - กรอบวงกลมสัดส่วน 1:1 ชัดเจน */}
+                    <div style={{
+                      width: '84px',
+                      height: '84px',
+                      minWidth: '84px',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      border: '2px solid var(--notion-border)',
+                      backgroundColor: 'var(--notion-bg)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                      aspectRatio: '1 / 1'
+                    }}>
+                      <img
+                        src="/29153_21110216161211.jpg"
+                        alt="ครูที่ปรึกษา"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          objectPosition: 'center 20%',
+                          display: 'block'
+                        }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          if (target.parentElement) {
+                            target.parentElement.innerHTML = `<span style="color: var(--notion-text-muted); font-size: 32px; font-weight: 600;">👨‍🏫</span>`;
+                          }
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: '220px' }}>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--notion-text)', marginBottom: '4px' }}>
+                        นายทนงค์ศักดิ์ คงศรีลังก์
+                      </div>
+                      <div style={{ fontSize: '0.88rem', color: 'var(--notion-text-muted)' }}>
+                        แผนกวิชาเทคโนโลยีสารสนเทศ วิทยาลัยเทคนิคนครศรีธรรมราช
                       </div>
                     </div>
                   </div>
@@ -1026,7 +1209,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                                 } else {
                                   const viewUrl = item.pdfUrl || item.link || item.imageUrl;
                                   if (viewUrl) {
-                                    setViewingPdf({ url: viewUrl, title: item.title });
+                                    setViewingPdf({ url: viewUrl, title: item.title, docId: item.id });
                                   }
                                 }
                               };
@@ -1273,6 +1456,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             inset: 0,
             backgroundColor: 'rgba(15, 15, 15, 0.75)',
             backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
             zIndex: 100000,
             display: 'flex',
             alignItems: 'center',
@@ -1317,10 +1501,10 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <a
-                  href={viewingPdf.url}
-                  target="_blank"
-                  rel="noreferrer"
+                {/* Direct Share Link button */}
+                <button
+                  type="button"
+                  onClick={() => handleCopyDocLink(viewingPdf.url, viewingPdf.title, viewingPdf.docId)}
                   className="notion-btn"
                   style={{
                     padding: '4px 8px',
@@ -1332,14 +1516,62 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                     alignItems: 'center',
                     gap: '4px',
                     fontSize: '0.78rem',
-                    color: '#2563eb',
-                    textDecoration: 'none'
+                    color: 'var(--notion-text)',
+                    transition: 'all 0.15s ease'
                   }}
-                  title="เปิดในแท็บใหม่"
+                  title="คัดลอกลิงก์ไฟล์เอกสารนี้"
                 >
-                  <ExternalLink size={13} />
-                  <span className="btn-text-responsive">เปิดลิงก์</span>
-                </a>
+                  <Copy size={13} />
+                  <span className="btn-text-responsive">แชร์ลิงก์</span>
+                </button>
+                {/* Download Button (Direct Download original PDF / Word / Image / File) */}
+                {!isCanvaUrl(viewingPdf.url) ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadFile(viewingPdf.url, viewingPdf.title)}
+                    className="notion-btn"
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--notion-border)',
+                      background: 'var(--notion-bg)',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.78rem',
+                      color: 'var(--notion-text)'
+                    }}
+                    title="ดาวน์โหลดไฟล์ต้นฉบับลงเครื่อง"
+                  >
+                    <Download size={13} />
+                    <span className="btn-text-responsive">ดาวน์โหลด</span>
+                  </button>
+                ) : (
+                  <a
+                    href={viewingPdf.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="notion-btn"
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--notion-border)',
+                      background: 'var(--notion-bg)',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.78rem',
+                      color: '#2563eb',
+                      textDecoration: 'none'
+                    }}
+                    title="เปิดในแท็บใหม่"
+                  >
+                    <ExternalLink size={13} />
+                    <span className="btn-text-responsive">เปิดลิงก์</span>
+                  </a>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsPdfFullscreen(!isPdfFullscreen)}
@@ -1366,7 +1598,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   onClick={() => {
                     setViewingPdf(null);
                     setIsPdfFullscreen(false);
-                  }}
+                          }}
                   className="notion-btn"
                   style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--notion-border)', background: 'var(--notion-bg)', color: 'var(--notion-text)', cursor: 'pointer' }}
                   title="ปิดหน้าต่าง (Esc)"
@@ -1405,6 +1637,36 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                       boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
                     }}
                   />
+                </div>
+              ) : /\.(doc|docx)($|\?)/i.test(viewingPdf.url) || viewingPdf.url.includes('application/msword') || viewingPdf.url.includes('wordprocessingml') ? (
+                /* Microsoft Office Live Viewer for .doc / .docx files */
+                <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--notion-bg)', position: 'relative' }}>
+                  {viewingPdf.url.startsWith('http://') || viewingPdf.url.startsWith('https://') ? (
+                    <iframe
+                      src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(viewingPdf.url)}`}
+                      title={viewingPdf.title || "เอกสาร Word"}
+                      style={{ width: '100%', height: '100%', border: 'none', flex: 1 }}
+                    />
+                  ) : (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px', textAlign: 'center' }}>
+                      <FileText size={48} color="#2563eb" style={{ marginBottom: '16px' }} />
+                      <h3 style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--notion-text)', marginBottom: '8px' }}>
+                        {viewingPdf.title}
+                      </h3>
+                      <p style={{ fontSize: '0.88rem', color: 'var(--notion-text-muted)', marginBottom: '20px', maxWidth: '380px' }}>
+                        เอกสาร Microsoft Word (.doc, .docx) พร้อมสำหรับดาวน์โหลดหรือเปิดด้วยแอปในเครื่องของคุณ
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadFile(viewingPdf.url, viewingPdf.title)}
+                        className="notion-btn notion-btn-primary"
+                        style={{ padding: '9px 20px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                      >
+                        <Download size={15} />
+                        <span>ดาวน์โหลดไฟล์ Word</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <PdfDocViewer url={viewingPdf.url} title={viewingPdf.title} />
@@ -1527,7 +1789,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   onItemClick={(item) => {
                     const viewUrl = item.url || item.image || item.imageUrl;
                     if (viewUrl) {
-                      setViewingPdf({ url: viewUrl, title: item.title || activeFolderProject.title });
+                      setViewingPdf({ url: viewUrl, title: item.title || activeFolderProject.title, docId: activeFolderProject.id });
                     }
                   }}
                 />
@@ -1537,6 +1799,33 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
         </div>
       )}
 
+
+      {/* Toast Notification for Direct Link Copying */}
+      {toastMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#18181b',
+            color: '#f4f4f5',
+            padding: '10px 18px',
+            borderRadius: '9999px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15)',
+            fontSize: '0.88rem',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            zIndex: 100001,
+            animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
+        >
+          <Check size={16} color="#10b981" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };
