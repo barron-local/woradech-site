@@ -965,8 +965,49 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="empty-state">
-                  <p>ยังไม่มีรายการผลงาน</p>
+                <div
+                  className="empty-state"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '64px 24px',
+                    borderRadius: '16px',
+                    border: '1.5px dashed var(--notion-border-dark)',
+                    backgroundColor: 'var(--notion-sidebar)',
+                    textAlign: 'center',
+                    width: '100%',
+                    maxWidth: '480px',
+                    margin: '36px auto',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--notion-hover)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: '16px',
+                      color: 'var(--notion-text-muted)'
+                    }}
+                  >
+                    <FolderOpen size={28} strokeWidth={1.5} />
+                  </div>
+                  <h3
+                    style={{
+                      fontSize: '18px',
+                      fontWeight: 600,
+                      color: 'var(--notion-text)',
+                      margin: 0
+                    }}
+                  >
+                    ยังไม่มีรายการผลงาน
+                  </h3>
                 </div>
               )
             ) : (
