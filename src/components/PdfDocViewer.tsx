@@ -28,14 +28,13 @@ const PdfCanvasPage: React.FC<{
   zoom: number;
   rotation: number;
   containerWidth: number;
-  totalCount: number;
+  totalCount?: number;
 }> = ({
   pdfDoc,
   pageNum,
   zoom,
   rotation,
-  containerWidth,
-  totalCount
+  containerWidth
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const renderTaskRef = useRef<any>(null);
@@ -180,25 +179,6 @@ const PdfCanvasPage: React.FC<{
           }}
         />
       )}
-
-      {/* Notion Page Badge */}
-      <div
-        style={{
-          width: '100%',
-          padding: '6px 14px',
-          backgroundColor: '#fafafa',
-          borderTop: '1px solid #f4f4f5',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '0.74rem',
-          color: '#71717a',
-          fontWeight: 500
-        }}
-      >
-        <span style={{ color: '#a1a1aa' }}>หน้า {pageNum}</span>
-        <span>จาก {totalCount} หน้า</span>
-      </div>
     </div>
   );
 };

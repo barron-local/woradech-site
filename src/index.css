@@ -430,18 +430,116 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Portfolio Grid Responsive (auto-adjust from 1 column on mobile to 2 on desktop) */
+/* Portfolio Grid Responsive with customizable layout */
 .portfolio-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
+  gap: 22px;
   align-items: stretch;
+  width: 100%;
+}
+
+.portfolio-grid.cols-1 {
+  grid-template-columns: 1fr;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.portfolio-grid.cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.portfolio-grid.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.portfolio-grid.cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Per-card span classes for 4-column layout */
+@media (min-width: 768px) {
+  .notion-card.card-span-2 {
+    grid-column: span 2 / span 2;
+  }
+
+  .notion-card.card-span-3 {
+    grid-column: span 3 / span 3;
+  }
+
+  /* Full row (span 4) card styling: Hero Banner style (ปกกว้างเต็มตา มี overlay ข้อความสวยหรู) */
+  .notion-card.card-span-full,
+  .notion-card.card-span-4 {
+    grid-column: 1 / -1 !important;
+    flex-direction: column !important;
+    min-height: 280px !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  .notion-card.card-span-full .card-hero-banner-thumb,
+  .notion-card.card-span-4 .card-hero-banner-thumb {
+    width: 100% !important;
+    height: 320px !important;
+    position: relative !important;
+    overflow: hidden !important;
+    border-bottom: none !important;
+  }
+
+  .notion-card.card-span-full .card-hero-banner-thumb img,
+  .notion-card.card-span-4 .card-hero-banner-thumb img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    transition: transform 0.35s ease !important;
+  }
+
+  .notion-card.card-span-full:hover .card-hero-banner-thumb img,
+  .notion-card.card-span-4:hover .card-hero-banner-thumb img {
+    transform: scale(1.025) !important;
+  }
+
+  .notion-card.card-span-full .card-hero-banner-overlay,
+  .notion-card.card-span-4 .card-hero-banner-overlay {
+    position: absolute !important;
+    inset: 0 !important;
+    background: transparent !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    padding: 24px 28px !important;
+    z-index: 5 !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .portfolio-grid.cols-4 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .portfolio-grid.cols-3,
+  .portfolio-grid.cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
-  .portfolio-grid {
+  .portfolio-grid,
+  .portfolio-grid.cols-1,
+  .portfolio-grid.cols-2,
+  .portfolio-grid.cols-3,
+  .portfolio-grid.cols-4 {
     grid-template-columns: 1fr !important;
-    gap: 18px !important;
+    gap: 16px !important;
+  }
+
+  .notion-card.card-span-2,
+  .notion-card.card-span-full,
+  .notion-card.card-span-4 {
+    grid-column: auto !important;
+    flex-direction: column !important;
   }
 
   .hero-section {

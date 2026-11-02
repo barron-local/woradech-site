@@ -120,11 +120,35 @@ function parseProjectRow(row: SupabaseProjectRow): PortfolioItem {
     } catch {}
   }
 
+  let mainItemTitle: string | undefined = undefined;
+  if (finalDescription.includes('MAINTITLE:::')) {
+    try {
+      const match = finalDescription.match(/MAINTITLE:::([\s\S]*?):::ENDMAINTITLE:::/);
+      if (match && match[1]) {
+        mainItemTitle = match[1];
+        finalDescription = finalDescription.replace(/MAINTITLE:::[\s\S]*?:::ENDMAINTITLE:::/, '').trim();
+      }
+    } catch {}
+  }
+
+  let cardSpan: 1 | 2 | 3 | 4 | undefined = undefined;
+  if (finalDescription.includes('SPAN:::')) {
+    try {
+      const spanMatch = finalDescription.match(/SPAN:::([1-4]):::ENDSPAN:::/);
+      if (spanMatch && spanMatch[1]) {
+        cardSpan = Number(spanMatch[1]) as 1 | 2 | 3 | 4;
+        finalDescription = finalDescription.replace(/SPAN:::[1-4]:::ENDSPAN:::/, '').trim();
+      }
+    } catch {}
+  }
+
   return {
     id: row.id || `p-${Date.now()}`,
     title: row.title,
     category: realCategory,
     description: finalDescription,
+    mainItemTitle,
+    cardSpan,
     imageUrl: (row.image_url && !row.image_url.includes('unsplash.com') && row.image_url !== '/banner.png')
       ? row.image_url
       : '',
@@ -528,6 +552,8 @@ export async function updateProjectInSupabase(params: {
   newFile?: File | null;
   subItems?: PortfolioItem['subItems'];
   imageUrl?: string;
+  cardSpan?: 1 | 2 | 3 | 4;
+  mainItemTitle?: string;
 }): Promise<{ success: boolean; item?: PortfolioItem; error?: string }> {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -535,7 +561,19 @@ export async function updateProjectInSupabase(params: {
   }
 
   try {
-    let descToSave = params.description?.trim() || '';
+    // Strip any existing SPAN and MAINTITLE tags from description before re-encoding
+    let cleanDesc = (params.description || '')
+      .replace(/SPAN:::[1-4]:::ENDSPAN:::/g, '')
+      .replace(/MAINTITLE:::[\s\S]*?:::ENDMAINTITLE:::/g, '')
+      .trim();
+
+    let descToSave = cleanDesc;
+    if (params.mainItemTitle !== undefined && params.mainItemTitle.trim().length > 0) {
+      descToSave = `MAINTITLE:::${params.mainItemTitle.trim()}:::ENDMAINTITLE:::${descToSave}`;
+    }
+    if (params.cardSpan !== undefined) {
+      descToSave = `SPAN:::${params.cardSpan}:::ENDSPAN:::${descToSave}`;
+    }
     if (params.subItems !== undefined && params.subItems.length > 0) {
       descToSave = `SUBITEMS:::${JSON.stringify(params.subItems)}:::ENDSUB:::${descToSave}`;
     }
@@ -702,7 +740,9 @@ export async function updateProjectInSupabase(params: {
       id: params.id,
       title: updatePayload.title,
       category: realCategory,
-      description: params.description?.trim() || '',
+      description: cleanDesc,
+      cardSpan: params.cardSpan,
+      mainItemTitle: params.mainItemTitle || undefined,
       imageUrl: finalImageUrl,
       pdfUrl: updatePayload.pdf_url || (row ? row.pdf_url : ''),
       fileName: updatePayload.file_name || (row ? row.file_name : ''),
@@ -836,6 +876,11 @@ export async function saveSiteConfigToCloud(config: SiteConfig): Promise<boolean
       about: {
         ...config.about,
         avatarUrl: config.about.avatarUrl
+      },
+      portfolio: {
+        title: config.portfolio?.title || "My Work",
+        subtitle: config.portfolio?.subtitle || "",
+        gridColumns: config.portfolio?.gridColumns || 4
       },
       footer: config.footer,
       updatedAt: new Date().toISOString()

@@ -820,6 +820,17 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
             onUpdateProject={onUpdateProject}
             onDeleteProject={onDeleteProject}
             onReorderProjects={onReorderProjects}
+            currentGridColumns={config.portfolio?.gridColumns || 3}
+            onUpdateGridColumns={(cols) => {
+              const updatedConfig = {
+                ...config,
+                portfolio: {
+                  ...config.portfolio,
+                  gridColumns: cols
+                }
+              };
+              onUpdateConfig(updatedConfig);
+            }}
           />
         )}
 

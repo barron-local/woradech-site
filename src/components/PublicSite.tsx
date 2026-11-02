@@ -56,6 +56,11 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
   const [isPdfFullscreen, setIsPdfFullscreen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Portfolio Layout Grid Columns: 4 columns base layout to allow 1, 2, 3, 4 span per card
+  const portfolioColumns = (config.portfolio?.gridColumns && config.portfolio.gridColumns > 1)
+    ? config.portfolio.gridColumns
+    : 4;
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -934,9 +939,9 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
 
         {/* ----------------- PAGE 3: PORTFOLIO (แยกหน้า) ----------------- */}
         {currentPage === 'portfolio' && (
-          <section id="portfolio-root" className="responsive-page-container search-scroll-target" style={{ maxWidth: '1080px', margin: '0 auto' }}>
+          <section id="portfolio-root" className="responsive-page-container search-scroll-target" style={{ maxWidth: portfolioColumns === 4 ? '1280px' : '1080px', margin: '0 auto', transition: 'max-width 0.25s ease' }}>
             <div style={{ marginBottom: '32px' }}>
-              <h1 style={{ fontSize: '2.4rem', fontWeight: 700, color: 'var(--notion-text)' }}>
+              <h1 style={{ fontSize: '2.4rem', fontWeight: 700, color: 'var(--notion-text)', margin: 0 }}>
                 {config.portfolio.title}
               </h1>
             </div>
@@ -944,389 +949,312 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
             {/* Portfolio Grid or Empty State or Initial Loading Skeleton */}
             {config.portfolio.items.length === 0 ? (
               isInitialLoading ? (
-                <div className="portfolio-grid">
+                <div className={`portfolio-grid cols-${portfolioColumns}`}>
                   {[1, 2].map((k) => (
                     <div
                       key={k}
                       className="notion-card"
                       style={{ height: '360px', backgroundColor: '#ffffff', opacity: 0.6, animation: 'pulse 1.5s infinite ease-in-out' }}
                     >
-                      <div style={{ height: '230px', backgroundColor: 'var(--notion-sidebar)', borderBottom: '1px solid var(--notion-border)' }} />
-                      <div style={{ padding: '22px' }}>
-                        <div style={{ height: '20px', width: '60%', backgroundColor: 'var(--notion-sidebar)', borderRadius: '4px', marginBottom: '12px' }} />
-                        <div style={{ height: '14px', width: '85%', backgroundColor: 'var(--notion-sidebar)', borderRadius: '4px' }} />
+                      <div style={{ height: '230px', backgroundColor: 'var(--notion-sidebar)' }} />
+                      <div style={{ padding: '20px' }}>
+                        <div style={{ height: '20px', width: '70%', backgroundColor: 'var(--notion-sidebar)', borderRadius: '4px', marginBottom: '10px' }} />
+                        <div style={{ height: '14px', width: '40%', backgroundColor: 'var(--notion-sidebar)', borderRadius: '4px' }} />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{
-                  padding: '60px 24px',
-                  textAlign: 'center',
-                  backgroundColor: 'var(--notion-sidebar)',
-                  border: '1px dashed var(--notion-border-dark)',
-                  borderRadius: 'var(--radius-sm)',
-                  margin: '20px 0'
-                }}>
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '50%',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid var(--notion-border)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 16px',
-                    color: 'var(--notion-text-muted)'
-                  }}>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                      <circle cx="9" cy="9" r="2" />
-                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                    </svg>
-                  </div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--notion-text)', margin: 0 }}>
-                    ยังไม่มีผลงานใน Portfolio
-                  </h3>
+                <div className="empty-state">
+                  <p>ยังไม่มีรายการผลงาน</p>
                 </div>
               )
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
-                {(() => {
-                  // Group items by section banner
-                  type SectionGroup = {
-                    sectionItem: typeof config.portfolio.items[0] | null;
-                    items: typeof config.portfolio.items;
-                  };
-
-                  const groups: SectionGroup[] = [];
-                  let currentGroup: SectionGroup = { sectionItem: null, items: [] };
-
-                  config.portfolio.items.forEach((item) => {
-                    if (item.itemType === 'section') {
-                      if (currentGroup.sectionItem !== null || currentGroup.items.length > 0) {
-                        groups.push(currentGroup);
-                      }
-                      currentGroup = { sectionItem: item, items: [] };
-                    } else {
-                      currentGroup.items.push(item);
-                    }
-                  });
-
-                  if (currentGroup.sectionItem !== null || currentGroup.items.length > 0) {
-                    groups.push(currentGroup);
-                  }
-
-                  return groups.map((group, groupIdx) => {
-                    const section = group.sectionItem;
-                    const rawBg = section?.sectionBg;
-                    const rawColor = section?.sectionColor;
-                    const rawBorder = section?.sectionBorder;
-
-                    // Theme-aware fallback: if section has default light presets or light borders, adapt cleanly in Dark Mode
+              <div
+                className={`portfolio-grid cols-${portfolioColumns}`}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${portfolioColumns}, minmax(0, 1fr))`,
+                  gap: '22px',
+                  width: '100%'
+                }}
+              >
+                {config.portfolio.items.map((item, idx) => {
+                  /* Section Banner */
+                  if (item.itemType === 'section') {
+                    const rawBg = item.sectionBg;
+                    const rawColor = item.sectionColor;
+                    const rawBorder = item.sectionBorder;
                     const isDark = theme === 'dark';
                     const bg = rawBg || (isDark ? 'var(--notion-sidebar)' : '#f8fafc');
                     const textColor = rawColor || (isDark ? 'var(--notion-text)' : '#1e293b');
-
-                    // ในโหมด Dark เอา border ของป้ายกำกับหน่วยออกไปเลยทั้งหมด (border: 'none') เพื่อความเรียบเนียน ไม่ให้มีเส้นขอบใดๆ
                     const finalBorder = isDark ? 'none' : `1.5px solid ${rawBorder || '#e2e8f0'}`;
-
-                    const showBar = section?.sectionShowBar !== false;
-                    const fontSize = section?.sectionFontSize || '1.32rem';
-                    const align = section?.sectionAlign || 'left';
+                    const showBar = item.sectionShowBar !== false;
+                    const fontSize = item.sectionFontSize || '1.32rem';
+                    const align = item.sectionAlign || 'left';
                     const justifyContent = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
 
                     return (
                       <div
-                        key={section ? section.id : `group-${groupIdx}`}
-                        id={section ? `section-${section.id}` : undefined}
-                        className={section ? "search-scroll-target" : undefined}
+                        key={item.id || idx}
+                        id={`section-${item.id}`}
+                        className="search-scroll-target"
                         style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '20px'
+                          gridColumn: '1 / -1',
+                          marginTop: idx > 0 ? '24px' : '0px',
+                          marginBottom: '4px'
                         }}
                       >
-                        {/* Section Header Banner */}
-                        {section && (
-                          section.imageUrl && section.sectionBannerType !== 'text' ? (
-                            /* Image Banner Section */
-                            <div
-                              className="portfolio-section-banner portfolio-section-image-banner"
+                        {item.imageUrl && item.sectionBannerType !== 'text' ? (
+                          <div
+                            className="portfolio-section-banner portfolio-section-image-banner"
+                            style={{
+                              position: 'relative',
+                              width: '100%',
+                              borderRadius: '14px',
+                              overflow: 'hidden',
+                              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+                              border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+                              backgroundColor: isDark ? '#1e293b' : '#f1f5f9'
+                            }}
+                          >
+                            <img
+                              src={item.imageUrl}
+                              alt={item.title || "Section Banner"}
                               style={{
-                                position: 'relative',
                                 width: '100%',
-                                borderRadius: '14px',
-                                overflow: 'hidden',
-                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
-                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
-                                backgroundColor: isDark ? '#1e293b' : '#f1f5f9'
+                                height: 'auto',
+                                maxHeight: '380px',
+                                display: 'block',
+                                objectFit: 'cover'
                               }}
-                            >
-                              <img
-                                src={section.imageUrl}
-                                alt={section.title || "Section Banner"}
+                            />
+                            {!item.sectionHideTitle && item.title && (
+                              <div
                                 style={{
-                                  width: '100%',
-                                  height: 'auto',
-                                  maxHeight: '380px',
-                                  display: 'block',
-                                  objectFit: 'cover'
+                                  position: 'absolute',
+                                  inset: 0,
+                                  background: 'linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.25) 50%, transparent 100%)',
+                                  pointerEvents: 'none'
                                 }}
-                              />
-                              {!section.sectionHideTitle && section.title && (() => {
-                                const hasCustomPos = section.sectionTextX !== undefined && section.sectionTextY !== undefined;
-                                const posX = hasCustomPos ? Math.max(2, Math.min(98, section.sectionTextX!)) : (align === 'center' ? 50 : align === 'right' ? 95 : 5);
-                                const posY = hasCustomPos ? Math.max(5, Math.min(95, section.sectionTextY!)) : 88;
-                                const showFrame = section.sectionShowFrame !== false;
-
-                                return (
-                                  <div
-                                    style={{
-                                      position: 'absolute',
-                                      inset: 0,
-                                      background: showFrame
-                                        ? 'linear-gradient(to top, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.15) 55%, transparent 100%)'
-                                        : 'linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.25) 50%, transparent 100%)',
-                                      pointerEvents: 'none'
-                                    }}
-                                  >
-                                    <div
-                                      style={{
-                                        position: 'absolute',
-                                        left: `${posX}%`,
-                                        top: `${posY}%`,
-                                        transform: `translate(-${posX}%, -${posY}%)`,
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '10px',
-                                        padding: showFrame ? '7px 14px' : '2px 4px',
-                                        borderRadius: showFrame ? '8px' : '0px',
-                                        backgroundColor: showFrame ? 'rgba(15, 23, 42, 0.52)' : 'transparent',
-                                        backdropFilter: showFrame ? 'blur(8px)' : 'none',
-                                        border: showFrame ? '1px solid rgba(255, 255, 255, 0.22)' : 'none',
-                                        boxShadow: showFrame ? '0 4px 14px rgba(0, 0, 0, 0.35)' : 'none',
-                                        maxWidth: '92%'
-                                      }}
-                                    >
-                                      {showBar && (
-                                        <div
-                                          style={{
-                                            width: '5px',
-                                            height: '22px',
-                                            borderRadius: '3px',
-                                            backgroundColor: '#ffffff',
-                                            opacity: 0.95,
-                                            flexShrink: 0,
-                                            boxShadow: !showFrame ? '0 1px 4px rgba(0, 0, 0, 0.8)' : 'none'
-                                          }}
-                                        />
-                                      )}
-                                      <h2
-                                        style={{
-                                          fontSize: fontSize,
-                                          fontWeight: 700,
-                                          color: '#ffffff',
-                                          textShadow: showFrame
-                                            ? '0 2px 6px rgba(0, 0, 0, 0.8)'
-                                            : '0 2px 10px rgba(0, 0, 0, 0.95), 0 1px 3px rgba(0, 0, 0, 0.9)',
-                                          margin: 0,
-                                          letterSpacing: '-0.01em',
-                                          lineHeight: 1.3
-                                        }}
-                                      >
-                                        {section.title}
-                                      </h2>
-                                    </div>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          ) : (
-                            /* Text / Colored Header Section */
-                            <div
-                              className="portfolio-section-banner"
-                              style={{
-                                backgroundColor: bg,
-                                color: textColor,
-                                border: finalBorder,
-                                borderRadius: '12px',
-                                padding: '16px 24px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: justifyContent,
-                                textAlign: align,
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                                position: 'relative'
-                              }}
-                            >
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: justifyContent,
-                                gap: '12px',
-                                width: align === 'center' ? '100%' : 'auto'
-                              }}>
-                                {showBar && (
-                                  <div style={{
-                                    width: '8px',
-                                    height: '24px',
-                                    borderRadius: '4px',
-                                    backgroundColor: textColor,
-                                    opacity: 0.85,
-                                    flexShrink: 0
-                                  }} />
-                                )}
-                                <h2 style={{
-                                  fontSize: fontSize,
-                                  fontWeight: 700,
-                                  color: textColor,
-                                  margin: 0,
-                                  letterSpacing: '-0.01em',
-                                  lineHeight: 1.3
-                                }}>
-                                  {section.title}
-                                </h2>
-                              </div>
-                            </div>
-                          )
-                        )}
-
-                        {/* Projects in this section */}
-                        {group.items.length > 0 ? (
-                          <div className="portfolio-grid">
-                            {group.items.map((item) => {
-                              const hasSubItems = item.subItems && item.subItems.length > 0;
-                              const hasMain = Boolean(item.pdfUrl || item.link || item.imageUrl);
-                              const totalPieces = (hasMain ? 1 : 0) + (hasSubItems ? item.subItems!.length : 0);
-                              const subCount = totalPieces;
-
-                              const handleOpenProject = () => {
-                                if (hasSubItems) {
-                                  setIsFolderOpen(false);
-                                  setActiveFolderProject(item);
-                                } else {
-                                  const viewUrl = item.pdfUrl || item.link || item.imageUrl;
-                                  if (viewUrl) {
-                                    setViewingPdf({ url: viewUrl, title: item.title, docId: item.id });
-                                  }
-                                }
-                              };
-
-                              return (
+                              >
                                 <div
-                                  key={item.id}
-                                  id={`portfolio-item-${item.id}`}
-                                  className="notion-card search-scroll-target"
                                   style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                                    height: '100%',
-                                    position: 'relative'
+                                    position: 'absolute',
+                                    left: '5%',
+                                    top: '88%',
+                                    transform: 'translate(-5%, -88%)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    padding: '7px 14px',
+                                    borderRadius: '8px',
+                                    backgroundColor: 'rgba(15, 23, 42, 0.52)',
+                                    backdropFilter: 'blur(8px)',
+                                    border: '1px solid rgba(255, 255, 255, 0.22)',
+                                    boxShadow: '0 4px 14px rgba(0, 0, 0, 0.35)',
+                                    maxWidth: '92%'
                                   }}
                                 >
-                                  {/* Clickable Card to view PDF / Image or open Folder 3D */}
-                                  <div
-                                    onClick={handleOpenProject}
-                                    style={{
-                                      height: '210px',
-                                      overflow: 'hidden',
-                                      borderBottom: '1px solid var(--notion-border)',
-                                      cursor: 'pointer',
-                                      position: 'relative'
-                                    }}
-                                    title={hasSubItems ? `คลิกเพื่อเปิดแฟ้มดูผลงานทั้งหมด (${subCount} ชิ้น)` : "คลิกเพื่อเปิดดูรูปภาพ / เอกสาร"}
-                                  >
-                                    <PdfCardThumbnail
-                                      imageUrl={item.imageUrl}
-                                      pdfUrl={item.pdfUrl || item.link}
-                                      title={item.title}
+                                  {showBar && (
+                                    <div
+                                      style={{
+                                        width: '5px',
+                                        height: '22px',
+                                        borderRadius: '3px',
+                                        backgroundColor: '#ffffff',
+                                        opacity: 0.95,
+                                        flexShrink: 0
+                                      }}
                                     />
-
-                                  </div>
-
-                                  <div style={{
-                                    padding: '18px 20px',
-                                    flex: 1,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    justifyContent: 'space-between',
-                                    backgroundColor: 'var(--notion-bg)'
-                                  }}>
-                                    <div>
-                                      {/* Title with subtle category / format indicator */}
-                                      <div style={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
-                                        justifyContent: 'space-between',
-                                        gap: '12px',
-                                        marginBottom: item.description ? '8px' : '0px'
-                                      }}>
-                                        <h3
-                                          onClick={handleOpenProject}
-                                          style={{
-                                            fontSize: '1.12rem',
-                                            fontWeight: 650,
-                                            color: 'var(--notion-text)',
-                                            lineHeight: 1.4,
-                                            margin: 0,
-                                            cursor: 'pointer',
-                                            transition: 'color 0.15s ease'
-                                          }}
-                                          onMouseEnter={(e) => {
-                                            (e.currentTarget as HTMLElement).style.color = '#2563eb';
-                                          }}
-                                          onMouseLeave={(e) => {
-                                            (e.currentTarget as HTMLElement).style.color = 'var(--notion-text)';
-                                          }}
-                                        >
-                                          {item.title}
-                                        </h3>
-
-                                        <span style={{ color: 'var(--notion-text-muted)', flexShrink: 0, marginTop: '2px', cursor: 'pointer' }}
-                                          onClick={handleOpenProject}
-                                          title={hasSubItems ? "เปิดดูแฟ้มงาน" : "เปิดดูเอกสาร"}
-                                        >
-                                          {hasSubItems ? <FolderOpen size={17} color="#2563eb" /> : <ArrowUpRight size={17} />}
-                                        </span>
-                                      </div>
-
-                                      {/* Description */}
-                                      {item.description ? (
-                                        <p style={{
-                                          fontSize: '0.88rem',
-                                          color: 'var(--notion-text-muted)',
-                                          lineHeight: 1.55,
-                                          margin: '0 0 14px 0'
-                                        }}>
-                                          {item.description}
-                                        </p>
-                                      ) : null}
-                                    </div>
-                                  </div>
+                                  )}
+                                  <h2
+                                    style={{
+                                      fontSize: fontSize,
+                                      fontWeight: 700,
+                                      color: '#ffffff',
+                                      textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)',
+                                      margin: 0,
+                                      letterSpacing: '-0.01em',
+                                      lineHeight: 1.3
+                                    }}
+                                  >
+                                    {item.title}
+                                  </h2>
                                 </div>
-                              );
-                            })}
+                              </div>
+                            )}
                           </div>
                         ) : (
-                          <div style={{
-                            padding: '24px 20px',
-                            textAlign: 'center',
-                            color: 'var(--notion-text-muted)',
-                            fontSize: '0.9rem',
-                            backgroundColor: 'var(--notion-sidebar)',
-                            borderRadius: '8px',
-                            border: '1px dashed var(--notion-border)'
-                          }}>
-                            ยังไม่มีรายการผลงานในหน่วยนี้
+                          <div
+                            className="portfolio-section-banner"
+                            style={{
+                              backgroundColor: bg,
+                              color: textColor,
+                              border: finalBorder,
+                              borderRadius: '12px',
+                              padding: '16px 24px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: justifyContent,
+                              textAlign: align,
+                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                              position: 'relative'
+                            }}
+                          >
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: justifyContent,
+                              gap: '12px',
+                              width: align === 'center' ? '100%' : 'auto'
+                            }}>
+                              {showBar && (
+                                <div style={{
+                                  width: '4px',
+                                  height: '22px',
+                                  borderRadius: '2px',
+                                  backgroundColor: textColor,
+                                  opacity: 0.85,
+                                  flexShrink: 0
+                                }} />
+                              )}
+                              <h2 style={{
+                                fontSize: fontSize,
+                                fontWeight: 700,
+                                color: textColor,
+                                margin: 0,
+                                letterSpacing: '-0.01em',
+                                lineHeight: 1.3
+                              }}>
+                                {item.title}
+                              </h2>
+                            </div>
                           </div>
                         )}
                       </div>
                     );
-                  });
-                })()}
+                  }
+
+                  /* Project Card */
+                  const hasSubItems = item.subItems && item.subItems.length > 0;
+                  const hasMain = Boolean(item.pdfUrl || item.link || item.imageUrl);
+                  const totalPieces = (hasMain ? 1 : 0) + (hasSubItems ? item.subItems!.length : 0);
+                  const subCount = totalPieces;
+
+                  const handleOpenProject = () => {
+                    if (hasSubItems) {
+                      setIsFolderOpen(false);
+                      setActiveFolderProject(item);
+                    } else {
+                      const viewUrl = item.pdfUrl || item.link || item.imageUrl;
+                      if (viewUrl) {
+                        setViewingPdf({ url: viewUrl, title: item.title, docId: item.id });
+                      }
+                    }
+                  };
+
+                  const span = item.cardSpan || 1;
+                  const isWide = span === 2;
+                  const isThree = span === 3;
+                  const isFullRow = span === 4;
+
+                  return (
+                    <div
+                      key={item.id || idx}
+                      id={`portfolio-item-${item.id}`}
+                      className={`notion-card search-scroll-target ${isFullRow ? 'card-span-full' : isThree ? 'card-span-3' : isWide ? 'card-span-2' : ''}`}
+                      style={{
+                        gridColumn: isFullRow ? '1 / -1' : isThree ? 'span 3 / span 3' : isWide ? 'span 2 / span 2' : 'span 1 / span 1',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                        height: '100%',
+                        position: 'relative'
+                      }}
+                    >
+                      {/* Card Thumbnail on top */}
+                      <div
+                        onClick={handleOpenProject}
+                        style={{
+                          height: isFullRow ? '320px' : isThree ? '260px' : isWide ? '230px' : '210px',
+                          overflow: 'hidden',
+                          borderBottom: '1px solid var(--notion-border)',
+                          cursor: 'pointer',
+                          position: 'relative'
+                        }}
+                        title={hasSubItems ? `คลิกเพื่อเปิดแฟ้มดูผลงานทั้งหมด (${subCount} ชิ้น)` : "คลิกเพื่อเปิดดูรูปภาพ / เอกสาร"}
+                      >
+                        <PdfCardThumbnail
+                          imageUrl={item.imageUrl}
+                          pdfUrl={item.pdfUrl || item.link}
+                          title={item.title}
+                        />
+                      </div>
+
+                      {/* Bottom Info Section (Clean & Clear standard layout) */}
+                      <div style={{
+                        padding: '18px 20px',
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        backgroundColor: 'var(--notion-bg)'
+                      }}>
+                        <div>
+                          {/* Title & Icon */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            justifyContent: 'space-between',
+                            gap: '12px',
+                            marginBottom: item.description ? '8px' : '0px'
+                          }}>
+                            <h3
+                              onClick={handleOpenProject}
+                              style={{
+                                fontSize: isFullRow ? '1.25rem' : '1.12rem',
+                                fontWeight: 650,
+                                color: 'var(--notion-text)',
+                                lineHeight: 1.4,
+                                margin: 0,
+                                cursor: 'pointer',
+                                transition: 'color 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLElement).style.color = '#2563eb';
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLElement).style.color = 'var(--notion-text)';
+                              }}
+                            >
+                              {item.title}
+                            </h3>
+
+                            <span style={{ color: 'var(--notion-text-muted)', flexShrink: 0, marginTop: '2px', cursor: 'pointer' }}
+                              onClick={handleOpenProject}
+                              title={hasSubItems ? "เปิดดูแฟ้มงาน" : "เปิดดูเอกสาร"}
+                            >
+                              {hasSubItems ? <FolderOpen size={isFullRow ? 20 : 17} color="#2563eb" /> : <ArrowUpRight size={isFullRow ? 20 : 17} />}
+                            </span>
+                          </div>
+
+                          {/* Description */}
+                          {item.description ? (
+                            <p style={{
+                              fontSize: '0.88rem',
+                              color: 'var(--notion-text-muted)',
+                              lineHeight: 1.55,
+                              margin: '0 0 14px 0'
+                            }}>
+                              {item.description}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -1773,7 +1701,7 @@ export const PublicSite: React.FC<PublicSiteProps> = ({
                   items={[
                     // ชิ้นงานหลัก (Main project piece)
                     ...(activeFolderProject.pdfUrl || activeFolderProject.link || activeFolderProject.imageUrl ? [{
-                      title: activeFolderProject.fileName || activeFolderProject.title,
+                      title: activeFolderProject.mainItemTitle || activeFolderProject.title || activeFolderProject.fileName,
                       image: activeFolderProject.imageUrl || (activeFolderProject.pdfUrl && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(activeFolderProject.pdfUrl) ? activeFolderProject.pdfUrl : undefined),
                       url: activeFolderProject.pdfUrl || activeFolderProject.link || activeFolderProject.imageUrl,
                       description: activeFolderProject.description

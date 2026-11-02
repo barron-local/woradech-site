@@ -19,6 +19,7 @@ export interface PortfolioItem {
   fileName?: string;
   createdAt?: string;
   itemType?: 'project' | 'section';
+  mainItemTitle?: string; // Custom title for the primary piece inside the 3D folder
   subItems?: Array<{
     id?: string;
     title: string;
@@ -37,6 +38,7 @@ export interface PortfolioItem {
   sectionTextX?: number;
   sectionTextY?: number;
   sectionShowFrame?: boolean;
+  cardSpan?: 1 | 2 | 3 | 4; // Custom column span per card (1 = standard, 2 = 2 cols, 4 = full row)
 }
 
 export interface EducationItem {
@@ -96,6 +98,7 @@ export interface SiteConfig {
   portfolio: {
     title: string;
     subtitle: string;
+    gridColumns?: 1 | 2 | 3 | 4; // Default card grid layout chosen by admin (1, 2, 3, or 4 per row)
     items: PortfolioItem[];
   };
 
@@ -186,6 +189,7 @@ export const defaultSiteConfig: SiteConfig = {
   portfolio: {
     title: "My Work",
     subtitle: "",
+    gridColumns: 4,
     items: []
   },
   footer: {

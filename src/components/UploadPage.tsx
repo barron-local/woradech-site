@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import type { PortfolioItem } from '../types';
-import { UploadCloud, FileText, CheckCircle2, Edit2, Trash2, ExternalLink, X, Save, AlertCircle, Image as ImageIcon, GripVertical, ChevronUp, ChevronDown, Bookmark, Palette, Link as LinkIcon, Presentation, FolderOpen, Loader2, Scissors, Eye, EyeOff, Move } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, Edit2, Trash2, ExternalLink, X, Save, AlertCircle, Image as ImageIcon, GripVertical, ChevronUp, ChevronDown, Bookmark, Palette, Link as LinkIcon, Presentation, FolderOpen, Loader2, Scissors, Eye, EyeOff, Move, LayoutGrid, List } from 'lucide-react';
 import { uploadProjectToSupabase, updateProjectInSupabase, deleteProjectFromSupabase, createSectionInSupabase, createLinkProjectInSupabase, uploadAssetToSupabase } from '../supabase';
 import { renderPdfFirstPageToImage } from '../utils/pdfThumbnail';
 import { isCanvaUrl, toCanvaEmbedUrl } from '../utils/embedHelper';
@@ -14,6 +14,8 @@ interface UploadPageProps {
   onDeleteProject: (id: string) => void;
   onReorderProjects?: (items: PortfolioItem[]) => void;
   onNavigateToPortfolio?: () => void;
+  currentGridColumns?: 1 | 2 | 3 | 4;
+  onUpdateGridColumns?: (cols: 1 | 2 | 3 | 4) => void;
 }
 
 // Preset color options for sections (Notion inspired colors)
@@ -60,9 +62,22 @@ export const UploadPage: React.FC<UploadPageProps> = ({
     setLocalItems(projects);
   }, [projects]);
 
+  // View Mode: 'list' (แถวรายการแบบละเอียด) vs 'interactive-grid' (โหมดพรีวิวลากปรับขนาดการ์ดอิสระ)
+  const [viewMode, setViewMode] = useState<'list' | 'interactive-grid'>('interactive-grid');
+
   // Drag and Drop & Reordering State
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Drag Resize State
+  const [resizingItemId, setResizingItemId] = useState<string | null>(null);
+  const resizeSessionRef = useRef<{
+    itemId: string;
+    startX: number;
+    initialWidth: number;
+    containerWidth: number;
+    currentSpan: 1 | 2 | 3 | 4;
+  } | null>(null);
 
   // Form State for Link Project (Canva / Presentation / Web Link)
   const [linkUrl, setLinkUrl] = useState('');
@@ -113,6 +128,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   // Edit Modal State
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [editMainItemTitle, setEditMainItemTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editSectionBannerType, setEditSectionBannerType] = useState<'text' | 'image'>('text');
   const [editSectionImageUrl, setEditSectionImageUrl] = useState('');
@@ -390,6 +406,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   const startEdit = (item: PortfolioItem) => {
     setEditingItem(item);
     setEditTitle(item.title);
+    setEditMainItemTitle(item.mainItemTitle || '');
     setEditDescription(item.description || '');
     const isLink = checkIsLinkItem(item);
     setEditLinkUrl(isLink ? (item.link || item.pdfUrl || '') : '');
@@ -513,7 +530,9 @@ export const UploadPage: React.FC<UploadPageProps> = ({
         description: editDescription.trim(),
         linkUrl: finalLinkUrl,
         newFile: editNewFile,
-        subItems: validSubItems
+        subItems: validSubItems,
+        cardSpan: editingItem.cardSpan,
+        mainItemTitle: editMainItemTitle.trim()
       });
 
       let updatedPdfUrl = finalLinkUrl || editingItem.pdfUrl;
@@ -555,8 +574,10 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           fileName: editNewFile.name,
           link: finalUrl,
           tags: [isImage ? 'Image' : 'PDF'],
+          mainItemTitle: editMainItemTitle.trim() || undefined,
           subItems: validSubItems.length > 0 ? validSubItems : undefined
         };
+        setLocalItems(prev => prev.map(p => p.id === updatedItem.id ? updatedItem : p));
         onUpdateProject(updatedItem);
       } else {
         const updatedItem: PortfolioItem = {
@@ -566,8 +587,10 @@ export const UploadPage: React.FC<UploadPageProps> = ({
           pdfUrl: res.item?.pdfUrl || updatedPdfUrl,
           fileName: res.item?.fileName || updatedFileName,
           link: res.item?.link || editingItem.link,
+          mainItemTitle: editMainItemTitle.trim() || undefined,
           subItems: validSubItems.length > 0 ? validSubItems : undefined
         };
+        setLocalItems(prev => prev.map(p => p.id === updatedItem.id ? updatedItem : p));
         onUpdateProject(updatedItem);
       }
 
@@ -598,6 +621,127 @@ export const UploadPage: React.FC<UploadPageProps> = ({
       setDeletingId(null);
       setDeletingItem(null);
     }
+  };
+
+  // Quick Card Span Selector (1 = 1 ช่อง, 2 = 2 ช่อง, 3 = 3 ช่อง, 4 = เต็มแถว)
+  const handleSetItemSpan = async (item: PortfolioItem, newSpan: 1 | 2 | 3 | 4) => {
+    const updatedSpan = newSpan;
+    const updatedItem: PortfolioItem = {
+      ...item,
+      cardSpan: updatedSpan
+    };
+
+    // Immediate optimistic update in UI
+    setLocalItems(prev => prev.map(p => p.id === item.id ? updatedItem : p));
+    onUpdateProject(updatedItem);
+
+    // Persist to Supabase
+    try {
+      await updateProjectInSupabase({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        category: item.category,
+        subItems: item.subItems,
+        cardSpan: updatedSpan,
+        mainItemTitle: item.mainItemTitle
+      });
+    } catch (err) {
+      console.warn('Failed to save cardSpan to cloud:', err);
+    }
+  };
+
+  // Handle drag-to-resize on card edge
+  const handleStartResize = (e: React.MouseEvent, item: PortfolioItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const cardElement = (e.currentTarget as HTMLElement).closest('.admin-preview-card') as HTMLElement;
+    const gridContainer = cardElement?.parentElement;
+    if (!cardElement || !gridContainer) return;
+
+    const startX = e.clientX;
+    const initialWidth = cardElement.getBoundingClientRect().width;
+    const containerWidth = gridContainer.getBoundingClientRect().width;
+    const initialSpan = (item.cardSpan || 1) as 1 | 2 | 3 | 4;
+
+    setResizingItemId(item.id);
+    resizeSessionRef.current = {
+      itemId: item.id,
+      startX,
+      initialWidth,
+      containerWidth,
+      currentSpan: initialSpan
+    };
+
+    let latestSpan: 1 | 2 | 3 | 4 = (item.cardSpan || 1) as 1 | 2 | 3 | 4;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      // Calculate based on 4 columns per row
+      const unitColWidth = containerWidth / 4;
+      const deltaCols = deltaX / unitColWidth;
+
+      let candidateSpan: 1 | 2 | 3 | 4 = initialSpan;
+      if (initialSpan === 1) {
+        if (deltaCols > 2.4) candidateSpan = 4;
+        else if (deltaCols > 1.4) candidateSpan = 3;
+        else if (deltaCols > 0.4) candidateSpan = 2;
+        else candidateSpan = 1;
+      } else if (initialSpan === 2) {
+        if (deltaCols > 1.4) candidateSpan = 4;
+        else if (deltaCols > 0.4) candidateSpan = 3;
+        else if (deltaCols < -0.4) candidateSpan = 1;
+        else candidateSpan = 2;
+      } else if (initialSpan === 3) {
+        if (deltaCols > 0.4) candidateSpan = 4;
+        else if (deltaCols < -1.4) candidateSpan = 1;
+        else if (deltaCols < -0.4) candidateSpan = 2;
+        else candidateSpan = 3;
+      } else {
+        // initialSpan === 4
+        if (deltaCols < -2.4) candidateSpan = 1;
+        else if (deltaCols < -1.4) candidateSpan = 2;
+        else if (deltaCols < -0.4) candidateSpan = 3;
+        else candidateSpan = 4;
+      }
+
+      if (candidateSpan !== latestSpan) {
+        latestSpan = candidateSpan;
+        setLocalItems(prev => prev.map(p => p.id === item.id ? { ...p, cardSpan: candidateSpan } : p));
+      }
+    };
+
+    const onMouseUp = async () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      setResizingItemId(null);
+      resizeSessionRef.current = null;
+
+      // Final commit to parent & database
+      const finalItem: PortfolioItem = {
+        ...item,
+        cardSpan: latestSpan
+      };
+      onUpdateProject(finalItem);
+
+      try {
+        await updateProjectInSupabase({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          category: item.category,
+          subItems: item.subItems,
+          cardSpan: latestSpan,
+          mainItemTitle: item.mainItemTitle
+        });
+      } catch (err) {
+        console.warn('Failed to persist resized card span:', err);
+      }
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
   };
 
   // Reordering handlers
@@ -1884,38 +2028,96 @@ export const UploadPage: React.FC<UploadPageProps> = ({
               รายการผลงานทั้งหมด ({localItems.length})
             </h2>
           </div>
-          {onNavigateToPortfolio && (
-            <button
-              onClick={onNavigateToPortfolio}
-              className="notion-btn"
-              style={{
-                fontSize: '0.86rem',
-                fontWeight: 500,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 14px',
-                borderRadius: 'var(--radius-xs)',
-                border: '1px solid var(--notion-border)',
-                backgroundColor: '#ffffff',
-                color: 'var(--notion-text)',
-                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
-                transition: 'all 0.15s ease',
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--notion-hover)';
-                e.currentTarget.style.borderColor = 'var(--notion-border-dark)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#ffffff';
-                e.currentTarget.style.borderColor = 'var(--notion-border)';
-              }}
-            >
-              <span>ดูหน้า Portfolio</span>
-              <span>→</span>
-            </button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* View Mode Toggle: Interactive Grid vs List */}
+            <div style={{
+              display: 'inline-flex',
+              backgroundColor: '#f1f5f9',
+              borderRadius: '8px',
+              padding: '3px',
+              border: '1px solid #e2e8f0'
+            }}>
+              <button
+                type="button"
+                onClick={() => setViewMode('interactive-grid')}
+                title="โหมดพรีวิวจัดวางการ์ด (สามารถคลิกลากที่ขอบเพื่อปรับขนาด 1 ช่อง / 2 ช่อง / เต็มแถว ได้ทันที)"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  fontSize: '0.82rem',
+                  fontWeight: viewMode === 'interactive-grid' ? 600 : 500,
+                  backgroundColor: viewMode === 'interactive-grid' ? '#ffffff' : 'transparent',
+                  color: viewMode === 'interactive-grid' ? '#2563eb' : '#64748b',
+                  cursor: 'pointer',
+                  boxShadow: viewMode === 'interactive-grid' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <LayoutGrid size={15} />
+                <span>พรีวิวและลากปรับขนาด</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                title="โหมดรายการแนวตั้ง"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  fontSize: '0.82rem',
+                  fontWeight: viewMode === 'list' ? 600 : 500,
+                  backgroundColor: viewMode === 'list' ? '#ffffff' : 'transparent',
+                  color: viewMode === 'list' ? '#2563eb' : '#64748b',
+                  cursor: 'pointer',
+                  boxShadow: viewMode === 'list' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <List size={15} />
+                <span>รายการแถว</span>
+              </button>
+            </div>
+
+            {onNavigateToPortfolio && (
+              <button
+                onClick={onNavigateToPortfolio}
+                className="notion-btn"
+                style={{
+                  fontSize: '0.86rem',
+                  fontWeight: 500,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: 'var(--radius-xs)',
+                  border: '1px solid var(--notion-border)',
+                  backgroundColor: '#ffffff',
+                  color: 'var(--notion-text)',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                  transition: 'all 0.15s ease',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--notion-hover)';
+                  e.currentTarget.style.borderColor = 'var(--notion-border-dark)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.borderColor = 'var(--notion-border)';
+                }}
+              >
+                <span>ดูหน้า Portfolio</span>
+                <span>→</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {localItems.length === 0 ? (
@@ -1928,6 +2130,265 @@ export const UploadPage: React.FC<UploadPageProps> = ({
             color: 'var(--notion-text-muted)'
           }}>
             ยังไม่มีรายการผลงานที่บันทึกไว้ สามารถอัปโหลดงานแรกได้จากแบบฟอร์มด้านบน
+          </div>
+        ) : viewMode === 'interactive-grid' ? (
+          /* =========================================================================
+             INTERACTIVE GRID PREVIEW WITH DRAGGABLE RESIZE HANDLES
+             ========================================================================= */
+          <div style={{
+            backgroundColor: 'var(--notion-sidebar)',
+            border: '1.5px dashed var(--notion-border)',
+            borderRadius: '12px',
+            padding: '20px',
+            marginBottom: '24px'
+          }}>
+            <div
+              className="portfolio-grid cols-4"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                gap: '16px',
+                width: '100%'
+              }}
+            >
+              {localItems.map((item, idx) => {
+                // If it's a section banner, render full width label
+                if (item.itemType === 'section') {
+                  return (
+                    <div
+                      key={item.id || idx}
+                      style={{
+                        gridColumn: '1 / -1',
+                        backgroundColor: item.sectionBg || '#eff6ff',
+                        border: `1.5px solid ${item.sectionBorder || '#bfdbfe'}`,
+                        color: item.sectionColor || '#1e40af',
+                        borderRadius: '10px',
+                        padding: '12px 18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Bookmark size={20} />
+                        <span style={{ fontWeight: 700, fontSize: '1.05rem' }}>{item.title}</span>
+                        <span style={{ fontSize: '0.72rem', opacity: 0.8, padding: '2px 6px', borderRadius: '4px', border: '1px solid currentColor' }}>
+                          ป้ายกำกับหน่วย
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(item)}
+                          className="notion-btn"
+                          style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: '5px' }}
+                        >
+                          แก้ไข
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                const span = (item.cardSpan || 1) as 1 | 2 | 3 | 4;
+                const isWide = span === 2;
+                const isThree = span === 3;
+                const isFull = span === 4;
+                const isResizing = resizingItemId === item.id;
+
+                return (
+                  <div
+                    key={item.id || idx}
+                    className="admin-preview-card"
+                    style={{
+                      gridColumn: isFull ? '1 / -1' : isThree ? 'span 3 / span 3' : isWide ? 'span 2 / span 2' : 'span 1',
+                      position: 'relative',
+                      backgroundColor: '#ffffff',
+                      border: isResizing ? '2px solid #2563eb' : '1px solid var(--notion-border)',
+                      borderRadius: '10px',
+                      boxShadow: isResizing
+                        ? '0 10px 25px rgba(37, 99, 235, 0.2)'
+                        : '0 2px 8px rgba(0,0,0,0.04)',
+                      display: 'flex',
+                      flexDirection: isFull ? 'row' : 'column',
+                      overflow: 'hidden',
+                      transition: isResizing ? 'none' : 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+                      minHeight: isFull ? '160px' : '280px',
+                      userSelect: isResizing ? 'none' : 'auto'
+                    }}
+                  >
+                    {/* Thumbnail preview */}
+                    <div style={{
+                      width: isFull ? '260px' : '100%',
+                      minWidth: isFull ? '260px' : 'auto',
+                      height: isFull ? 'auto' : '150px',
+                      backgroundColor: '#f8fafc',
+                      borderRight: isFull ? '1px solid var(--notion-border)' : 'none',
+                      borderBottom: isFull ? 'none' : '1px solid var(--notion-border)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+                          <FileText size={36} />
+                          <div style={{ fontSize: '0.75rem', marginTop: '4px' }}>เอกสารผลงาน</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div style={{
+                      padding: '14px 16px',
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minWidth: 0
+                    }}>
+                      <div>
+                        <h4 style={{
+                          margin: '0 0 6px 0',
+                          fontSize: '0.98rem',
+                          fontWeight: 700,
+                          color: 'var(--notion-text)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {item.title}
+                        </h4>
+                        {item.description && (
+                          <p style={{
+                            margin: 0,
+                            fontSize: '0.8rem',
+                            color: 'var(--notion-text-muted)',
+                            lineHeight: 1.45,
+                            display: '-webkit-box',
+                            WebkitLineClamp: isFull ? 3 : 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}>
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Card Bottom: Quick Span Buttons + Actions */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginTop: '12px',
+                        paddingTop: '10px',
+                        borderTop: '1px solid #f1f5f9',
+                        flexWrap: 'wrap',
+                        gap: '6px'
+                      }}>
+                        {/* Quick Size Switcher */}
+                        <div style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '2px',
+                          backgroundColor: '#f1f5f9',
+                          padding: '2px 4px',
+                          borderRadius: '6px'
+                        }}>
+                          {([
+                            { span: 1 as const, text: '1 ช่อง' },
+                            { span: 2 as const, text: '2 ช่อง' },
+                            { span: 3 as const, text: '3 ช่อง' },
+                            { span: 4 as const, text: '4 ช่อง (เต็ม)' }
+                          ]).map((s) => (
+                            <button
+                              key={s.span}
+                              type="button"
+                              onClick={() => handleSetItemSpan(item, s.span)}
+                              style={{
+                                padding: '2px 7px',
+                                borderRadius: '4px',
+                                border: 'none',
+                                fontSize: '0.72rem',
+                                fontWeight: span === s.span ? 700 : 500,
+                                backgroundColor: span === s.span ? '#2563eb' : 'transparent',
+                                color: span === s.span ? '#ffffff' : '#64748b',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {s.text}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => startEdit(item)}
+                            className="notion-btn"
+                            style={{ fontSize: '0.76rem', padding: '4px 10px', borderRadius: '5px' }}
+                          >
+                            <Edit2 size={12} />
+                            <span>แก้ไข</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => promptDelete(item)}
+                            className="notion-btn"
+                            style={{ fontSize: '0.76rem', padding: '4px 8px', borderRadius: '5px', color: '#dc2626' }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* DRAG RESIZE HANDLE ON RIGHT EDGE */}
+                    <div
+                      onMouseDown={(e) => handleStartResize(e, item)}
+                      title="คลิกค้างแล้วลากเมาส์ซ้าย-ขวา เพื่อปรับขนาดการ์ดนี้"
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        width: '14px',
+                        height: '100%',
+                        cursor: 'ew-resize',
+                        zIndex: 20,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: isResizing ? 'rgba(37, 99, 235, 0.4)' : 'transparent',
+                        transition: 'background-color 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isResizing) (e.currentTarget as HTMLElement).style.background = 'rgba(37, 99, 235, 0.18)';
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isResizing) (e.currentTarget as HTMLElement).style.background = 'transparent';
+                      }}
+                    >
+                      {/* Visual 3-dot grip line indicator */}
+                      <div style={{
+                        width: '4px',
+                        height: '32px',
+                        borderRadius: '2px',
+                        backgroundColor: isResizing ? '#2563eb' : '#94a3b8',
+                        opacity: isResizing ? 1 : 0.6
+                      }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -2210,8 +2671,60 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                     </div>
                   )}
 
-                  {/* Right: Actions */}
+                  {/* Right: Actions and per-card layout selector */}
                   <div className="upload-item-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    {/* Per-card custom width/span selector (only for projects, not sections) */}
+                    {item.itemType !== 'section' && (
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '2px',
+                          backgroundColor: '#f1f5f9',
+                          padding: '3px 4px',
+                          borderRadius: '8px',
+                          border: '1px solid #e2e8f0',
+                          marginRight: '4px'
+                        }}
+                        title="กำหนดขนาดการ์ดใบนี้บนหน้าเว็บ"
+                      >
+                        <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, padding: '0 4px' }}>
+                          ขนาด:
+                        </span>
+                        {([
+                          { span: 1 as const, label: '1 ช่อง (1/4 แถว)', text: '1 ช่อง' },
+                          { span: 2 as const, label: '2 ช่อง (ครึ่งแถว)', text: '2 ช่อง' },
+                          { span: 3 as const, label: '3 ช่อง (3/4 แถว)', text: '3 ช่อง' },
+                          { span: 4 as const, label: '4 ช่อง (เต็มแถว)', text: 'เต็มแถว' }
+                        ]).map((s) => {
+                          const currentSpan = item.cardSpan || 1;
+                          const isActive = currentSpan === s.span;
+                          return (
+                            <button
+                              key={s.span}
+                              type="button"
+                              onClick={() => handleSetItemSpan(item, s.span)}
+                              title={s.label}
+                              style={{
+                                padding: '3px 8px',
+                                borderRadius: '5px',
+                                border: 'none',
+                                fontSize: '0.74rem',
+                                fontWeight: isActive ? 700 : 500,
+                                backgroundColor: isActive ? '#2563eb' : 'transparent',
+                                color: isActive ? '#ffffff' : '#64748b',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                boxShadow: isActive ? '0 1px 3px rgba(37,99,235,0.2)' : 'none'
+                              }}
+                            >
+                              {s.text}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
                     <button
                       onClick={() => startEdit(item)}
                       className="notion-btn"
@@ -3315,6 +3828,30 @@ export const UploadPage: React.FC<UploadPageProps> = ({
                     <p style={{ fontSize: '0.76rem', color: '#3b82f6', margin: '0 0 12px 0', lineHeight: 1.4 }}>
                       เมื่อมีผลงานย่อยตั้งแต่ 1 ชิ้นขึ้นไป ชิ้นงานนี้จะเปิดด้วยโฟลเดอร์ 3D แบบแอนิเมชันเปิดอ้าให้ผู้เข้าชมเลือกหยิบได้ทันที
                     </p>
+
+                    {/* Primary Piece Title Inside Folder */}
+                    <div style={{
+                      padding: '10px 12px',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #bfdbfe',
+                      borderRadius: '8px',
+                      marginBottom: '12px'
+                    }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1e40af', display: 'block', marginBottom: '4px' }}>
+                        🏷️ ชื่อชิ้นงานหลักใบแรก (ในแฟ้ม 3D):
+                      </label>
+                      <input
+                        type="text"
+                        value={editMainItemTitle}
+                        onChange={(e) => setEditMainItemTitle(e.target.value)}
+                        placeholder={editTitle || 'ใส่ชื่อเฉพาะสำหรับชิ้นงานใบแรกในแฟ้ม (ถ้าไม่ใส่จะใช้ชื่องานหลัก)'}
+                        className="notion-input"
+                        style={{ fontSize: '0.84rem', padding: '6px 8px', width: '100%' }}
+                      />
+                      <span style={{ fontSize: '0.72rem', color: 'var(--notion-text-muted)', display: 'block', marginTop: '3px' }}>
+                        * แยกอิสระจากชื่อหัวข้อแฟ้มด้านบน (ทำให้ชื่อบนการ์ด/หัวแฟ้ม กับชื่อใต้รูปชิ้นงานแรกตั้งต่างกันได้)
+                      </span>
+                    </div>
 
                     {editSubItems.length === 0 ? (
                       <div style={{

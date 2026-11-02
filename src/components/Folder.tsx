@@ -33,7 +33,6 @@ const FLAP_REST = [
 ];
 const SPREAD_TURN = [4, -5, 3, -6, 5, -3, 4, -4, 3, -5, 2, -3];
 const SPREAD_DROP = [0.03, -0.04, 0.05, -0.02, 0.04, -0.05, 0.03, -0.03, 0.04, -0.04, 0.02, -0.02];
-const DROP_TURN = [-6, 4, -3, 7, -5, 3, -4, 5, -3, 6, -5, 4];
 const BOOK_ANGLES = { open: -180, receive: -24, peek: -13, rest: 0 };
 const FLAP_ANGLES = { open: -64, receive: -30, peek: -15, rest: 0 };
 const LAYERS = { out: 50, drag: 80, focus: 90 };
@@ -182,9 +181,15 @@ const renderItem = (item: any) => {
   if (item && typeof item === 'object') {
     if (item.image || item.imageUrl) {
       const src = item.image || item.imageUrl;
+      const titleText = item.title || item.alt || '';
       return (
         <div className="folder-photo">
-          <img src={src} alt={item.alt ?? item.title ?? ''} draggable={false} />
+          <img src={src} alt={titleText} draggable={false} />
+          {titleText && (
+            <div className="folder-photo-caption" title={titleText}>
+              {titleText}
+            </div>
+          )}
         </div>
       );
     }
@@ -564,28 +569,6 @@ export const Folder: React.FC<FolderProps> = ({
       return x >= 0 && x <= geometry.w && y >= 0 && y <= geometry.tabH + geometry.h;
     };
 
-    const inPocket = (item: any) => {
-      const { g: geometry } = settingsRef.current;
-      const halfW = (geometry.docW * item.s.value) / 2;
-      const halfH = (geometry.docH * item.s.value) / 2;
-      if (geometry.book) {
-        if (state.front.value < -60) return false;
-        const shift = shiftOf();
-        return (
-          item.x.value - halfW < shift + geometry.w &&
-          item.x.value + halfW > shift &&
-          item.y.value + halfH > geometry.tabH &&
-          item.y.value - halfH < geometry.tabH + geometry.h
-        );
-      }
-      if (state.front.value < -45) return false;
-      return (
-        item.y.value + halfH > geometry.frontTop + 4 * geometry.scale &&
-        item.x.value + halfW > 0 &&
-        item.x.value - halfW < geometry.w
-      );
-    };
-
     const velocityOf = (samples: number[][]) => {
       if (samples.length < 2) return [0, 0];
       const first = samples[0];
@@ -757,9 +740,18 @@ export const Folder: React.FC<FolderProps> = ({
           item.layer = 'focus';
         } else if (drag && drag.index === index) {
           const [vx] = velocityOf(drag.samples);
+          // Limit drag range around origin using elastic rubber-banding (max ~75px)
+          const rawDx = (state.deskX + drag.grabX) - (drag.startX ?? item.x.value);
+          const rawDy = (state.deskY + drag.grabY) - (drag.startY ?? item.y.value);
+          const maxDist = 75 * geometry.scale;
+          const dist = Math.hypot(rawDx, rawDy);
+          const pullFactor = dist > 0 ? (Math.atan(dist / maxDist) * maxDist) / dist : 1;
+          const originX = drag.startX ?? item.x.value;
+          const originY = drag.startY ?? item.y.value;
+
           target = {
-            x: state.deskX + drag.grabX,
-            y: state.deskY + drag.grabY,
+            x: originX + rawDx * pullFactor,
+            y: originY + rawDy * pullFactor,
             z: 0,
             r: clamp(vx * 0.012, -14, 14),
             ry: 0,
@@ -768,8 +760,8 @@ export const Folder: React.FC<FolderProps> = ({
           omega = TAU * 5;
           damping = 0.78;
           liftVal = 1.4;
-          if (!item.elevated && !inPocket(item)) item.elevated = true;
-          item.layer = item.elevated ? 'drag' : 'inside';
+          item.elevated = false;
+          item.layer = 'drag';
         } else if (item.place === 'out') {
           target = { x: item.outX, y: item.outY, z: 0, r: item.outR, ry: 0, s: item.outS };
           liftVal = hover === index ? 1 : 0.15;
@@ -973,56 +965,32 @@ export const Folder: React.FC<FolderProps> = ({
       const item = state.items[drag.index];
       if (!item) return;
       drag.active = true;
+      drag.startX = item.x.value;
+      drag.startY = item.y.value;
       drag.grabX = item.x.value - drag.downX;
       drag.grabY = item.y.value - drag.downY;
       drag.scale = item.place === 'out' ? item.outS : item.s.value;
       drag.clip = clipBounds();
       state.suppressClick = true;
       if (state.focus === drag.index) state.focus = -1;
-      item.elevated = item.place === 'out' || !inPocket(item);
+      item.elevated = false;
       root.dataset.dragging = '';
     };
 
-    const drop = (drag: any, cancelled: boolean) => {
+    const drop = (drag: any, _cancelled: boolean) => {
       const s = settingsRef.current;
       const item = state.items[drag.index];
       state.receiving = false;
       delete root.dataset.dragging;
       if (!item) return;
       const time = performance.now() / 1000;
-      const [vx, vy] = cancelled ? [0, 0] : velocityOf(drag.samples);
-      if (overFolder(state.deskX, state.deskY)) {
-        const entering = item.place === 'out' || item.elevated;
-        item.place = 'inside';
-        if (entering && !reduce) {
-          item.insertUntil = time + 0.24 / s.speed;
-          item.insertFrom = s.g.book ? (state.front.value < -90 ? null : 'side') : 'top';
-          if (!item.insertFrom) item.insertUntil = 0;
-          state.receiveUntil = item.insertUntil ? item.insertUntil + 0.14 / s.speed : 0;
-        }
-        item.elevated = false;
-        syncOutside();
-        s.onItemDrop?.(s.entries[drag.index], drag.index, true);
-        return;
-      }
-      const clip = drag.clip ?? clipBounds();
-      const halfW = (s.g.docW * drag.scale) / 2;
-      const halfH = (s.g.docH * drag.scale) / 2;
-      const x = state.deskX + drag.grabX + clamp(vx, -2400, 2400) * 0.09;
-      const y = state.deskY + drag.grabY + clamp(vy, -2400, 2400) * 0.09;
-      item.place = 'out';
-      item.elevated = true;
-      const margin = 8 * s.g.scale;
-      const reachX = halfW * 1.08 + margin;
-      const reachY = halfH * 1.08 + margin;
-      item.outX = clamp(x, clip.left + reachX, Math.max(clip.left + reachX, clip.right - reachX));
-      item.outY = clamp(y, clip.top + reachY, Math.max(clip.top + reachY, clip.bottom - reachY));
-      item.outR = clamp(item.r.value * 0.5 + clamp(vx, -2400, 2400) * 0.003 + (DROP_TURN[drag.index % 6] || 0) * 0.6, -12, 12);
-      item.outS = drag.scale;
-      state.dropCount += 1;
-      item.outOrder = state.dropCount;
+      // Always snap back inside folder smoothly
+      item.place = 'inside';
+      item.insertUntil = time + 0.2 / s.speed;
+      item.insertFrom = 'top';
+      item.elevated = false;
       syncOutside();
-      s.onItemDrop?.(s.entries[drag.index], drag.index, false);
+      s.onItemDrop?.(s.entries[drag.index], drag.index, true);
     };
 
     const onMove = (event: PointerEvent) => {
@@ -1289,11 +1257,6 @@ export const Folder: React.FC<FolderProps> = ({
           <svg className="folder-back-rim" width={g.w} height={total} viewBox={`0 0 ${g.w} ${total}`}>
             <path className="folder-focus" d={shape} />
           </svg>
-          {label && (
-            <span className="folder-tab-text" style={{ left: g.tabX, width: g.tabW }}>
-              {label}
-            </span>
-          )}
         </div>
 
         {entries.map((item, index) => {
